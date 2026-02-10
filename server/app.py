@@ -29,7 +29,10 @@ from middleware import RequestContextLoggingMiddleware
 from metrics import init_metrics_table, record_request, flush
 import structlog
 
-app = FastAPI(title="ROBoard Spares Kiosk API", version="1.0")
+app = FastAPI(
+    title="ROBoard Spares Kiosk API",
+    version="1.0.0"
+)
 
 # Logging middleware is added before any routes to ensure all requests are logged, including unmatched routes.
 logger = setup_logging()
