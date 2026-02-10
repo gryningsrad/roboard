@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { height: 100%; }
+* { -webkit-tap-highlight-color: transparent; }
+
+:root {
+  /* Roboard brand tokens */
+  --rb-bg: #050f22;        /* deep background */
+  --rb-base: #071a33;      /* navy */
+  --rb-surface: #0b2346;   /* card/nav surface */
+  --rb-border: rgba(255, 255, 255, 0.10);
+
+  --rb-text: #ffffff;
+  --rb-muted: rgba(255, 255, 255, 0.70);
+  --rb-dim: rgba(255, 255, 255, 0.55);
+
+  --rb-accent: #ff4b00;    /* ROB orange-red */
+  --rb-accent-hover: #ff6a2a;
+}
+
+body {
+  background: var(--rb-bg);
+  color: var(--rb-text);
+}

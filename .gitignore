@@ -1,0 +1,10 @@
+testdata/
+.env
+node_modules/
+dist/
+client/node_modules/
+server/app.db
+server/__pycache__/
+server/.devenv
+server/.venv
+.vscode/
