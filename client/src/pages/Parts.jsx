@@ -17,6 +17,7 @@ export default function Parts({ pushToast }) {
     name: "Search by name…",
     makers_ref: "Search by maker’s reference…",
     location: "Search by location…",
+    ean: "Search by EAN…",
   };
 
   const [robFlashKey, setRobFlashKey] = useState(null);
@@ -79,7 +80,7 @@ export default function Parts({ pushToast }) {
         <div className="space-y-1">
           <h1 className="text-2xl font-extrabold tracking-tight text-[var(--rb-text)]">Parts</h1>
           <p className="text-sm text-[var(--rb-muted)]">
-            Search by number, name, maker reference, or location.
+            Search by number, name, EAN, maker reference, or location.
           </p>
         </div>
 
