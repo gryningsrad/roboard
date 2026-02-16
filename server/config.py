@@ -23,7 +23,7 @@ SPARES_ENV = os.getenv("SPARES_ENV", "prod").lower()  # "dev" or "prod"
 
 # Local export roots (override with env vars if you want)
 DEV_LOCAL_EXPORTS = Path(os.getenv("DEV_LOCAL_EXPORTS", "./spares_exports_dev"))
-PROD_LOCAL_EXPORTS = Path(os.getenv("PROD_LOCAL_EXPORTS", "/home/pi/exports"))
+PROD_LOCAL_EXPORTS = Path(os.getenv("PROD_LOCAL_EXPORTS", "/home/mambo/Documents"))
 
 # Subfolder used within the chosen export root
 EXPORT_SUBDIR = os.getenv("SPARES_EXPORT_SUBDIR", "spares_exports")

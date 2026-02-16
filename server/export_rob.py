@@ -3,7 +3,6 @@ from pathlib import Path
 from openpyxl import Workbook
 from db import get_conn
 
-
 def export_rob_xlsx(dest: Path) -> Path:
     """
     Export current ROB (Remaining On Board) data to an Excel (.xlsx) file.

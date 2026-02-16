@@ -1,6 +1,7 @@
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any
+import os
 
 from openpyxl import load_workbook
 
@@ -8,7 +9,11 @@ from db import get_conn
 from usb import find_usb_mount
 from export_wishlist import export_wishlist_xlsx
 
-LOCAL_EXPORTS = Path("/home/pi/exports")
+LOCAL_EXPORTS = Path(
+    os.getenv("ROBOARD_EXPORT_DIR", "./spareexports")
+)
+
+LOCAL_EXPORTS.mkdir(parents=True, exist_ok=True)
 
 def _to_float(v: Any, default: float | None = None) -> float | None:
     v = _clean(v)

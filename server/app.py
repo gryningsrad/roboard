@@ -38,10 +38,7 @@ app = FastAPI(
 logger = setup_logging()
 app.add_middleware(RequestContextLoggingMiddleware)
 
-
 BASE = Path(__file__).resolve().parent
-
-
 class RobIn(BaseModel):
     """
     Payload model for setting or adjusting ROB (Remaining On Board).
@@ -140,6 +137,154 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
     Search parts in the database.
 
     If no query is provided, returns a limited list of all parts.
+    If a query is provided, performs a tokenized LIKE-based search (order independent)
+    on the selected field.
+
+    Args:
+        q (str):
+            Search query string.
+        field (str):
+            Field to search in. One of:
+                - "name"
+                - "makers_ref"
+                - "location"
+                - "ean"
+                - "all" (default)
+        limit (int):
+            Maximum number of results to return.
+
+    Returns:
+        list[dict]:
+            List of parts including wishlist status and ROB information.
+    """
+    q = (q or "").strip()
+    field = (field or "all").lower()
+
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 50
+    limit = max(1, min(limit, 200))
+
+    # Split the query into tokens (order-independent search)
+    # e.g. "sea water pump" -> ["sea", "water", "pump"]
+    tokens = [t for t in q.split() if t]
+    # Debug logging to verify tokenization and field selection
+    print("TOKENS:", tokens, "FIELD:", field)
+
+    conn = get_conn()
+    try:
+        if not tokens:
+            rows = conn.execute(
+                """
+                SELECT p.*,
+                    EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
+                    r.rob AS rob,
+                    r.updated_at AS rob_updated_at
+                FROM parts p
+                LEFT JOIN rob r ON r.part_number = p.number
+                ORDER BY p.default_location, p.number
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+        # Helper: build WHERE clause + params for tokenized search
+        params = []
+
+        def like_for(token: str) -> str:
+            return f"%{token}%"
+
+        if field == "name":
+            # AND across tokens within the name field
+            where_parts = []
+            for t in tokens:
+                where_parts.append("p.name LIKE ?")
+                params.append(like_for(t))
+            where = " AND ".join(where_parts)
+
+        elif field == "makers_ref":
+            where_parts = []
+            for t in tokens:
+                where_parts.append("p.makers_reference LIKE ?")
+                params.append(like_for(t))
+            where = " AND ".join(where_parts)
+
+        elif field == "location":
+            where_parts = []
+            for t in tokens:
+                where_parts.append("p.default_location LIKE ?")
+                params.append(like_for(t))
+            where = " AND ".join(where_parts)
+
+        elif field == "ean":
+            where_parts = []
+            for t in tokens:
+                where_parts.append("p.ean LIKE ?")
+                params.append(like_for(t))
+            where = " AND ".join(where_parts)
+
+        else:
+            # field == "all"
+            # For each token, it can match ANY of the fields (OR),
+            # but EVERY token must match somewhere (AND).
+            token_groups = []
+            for t in tokens:
+                like = like_for(t)
+
+                # Apply dot-stripping trick only for long digit-only tokens
+                if t.isdigit() and len(t) >= 5:
+                    token_groups.append(
+                        "("
+                        "p.number LIKE ? OR "
+                        "REPLACE(p.number, '.', '') LIKE ? OR "
+                        "p.name LIKE ? OR "
+                        "p.makers_reference LIKE ? OR "
+                        "p.default_location LIKE ? OR "
+                        "p.ean LIKE ?"
+                        ")"
+                    )
+                    params.extend([like, like, like, like, like, like])
+                else:
+                    token_groups.append(
+                        "("
+                        "p.number LIKE ? OR "
+                        "p.name LIKE ? OR "
+                        "p.makers_reference LIKE ? OR "
+                        "p.default_location LIKE ? OR "
+                        "p.ean LIKE ?"
+                        ")"
+                    )
+                    params.extend([like, like, like, like, like])
+
+            where = " AND ".join(token_groups)
+
+        rows = conn.execute(
+            f"""
+            SELECT p.*,
+                EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
+                r.rob AS rob,
+                r.updated_at AS rob_updated_at
+            FROM parts p
+            LEFT JOIN rob r ON r.part_number = p.number
+            WHERE {where}
+            ORDER BY p.default_location, p.number
+            LIMIT ?
+            """,
+            (*params, limit),
+        ).fetchall()
+
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+@app.get("/api/simple_parts")
+def simple_search_parts(q: str = "", field: str = "all", limit: int = 50):
+    """
+    Search parts in the database.
+
+    If no query is provided, returns a limited list of all parts.
     If a query is provided, performs a LIKE-based search on the selected field.
 
     Args:
@@ -227,7 +372,6 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
         return [dict(r) for r in rows]
     finally:
         conn.close()
-
 
 @app.get("/api/wishlist")
 def get_wishlist():

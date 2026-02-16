@@ -9,8 +9,13 @@ export default function Parts({ pushToast }) {
   const [loading, setLoading] = useState(false);
   const [searchField, setSearchField] = useState("all");
 
+  // Stock Class filter: all | engine(E) | electric(EL)
+  const [stockClass, setStockClass] = useState("all");
+
   const scanRef = useRef(null);
   const debouncedQ = useDebounced(q, 200);
+  const searchRef = useRef(null);
+  const lastEscRef = useRef(0);
 
   const placeholderMap = {
     all: "Search part number, name, maker ref, location, EAN…",
@@ -42,9 +47,9 @@ export default function Parts({ pushToast }) {
   async function load() {
     setLoading(true);
     try {
-      const data = await apiGet(
-        `/api/parts?q=${encodeURIComponent(debouncedQ)}&field=${searchField}&limit=${limit}`
-      );
+        const data = await apiGet(
+          `/api/parts?q=${encodeURIComponent(debouncedQ)}&field=${searchField}&limit=${limit}`
+        );
       setRows(data);
     } finally {
       setLoading(false);
@@ -66,6 +71,29 @@ export default function Parts({ pushToast }) {
     }
   }
 
+  // Global key handler for Escape key to focus search and clear on double-press
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key !== "Escape") return;
+
+      const now = Date.now();
+      const delta = now - lastEscRef.current;
+
+      // Always focus search input on first Esc
+      searchRef.current?.focus();
+
+      // If pressed twice within 400ms → clear
+      if (delta < 400) {
+        setQ("");
+      }
+
+      lastEscRef.current = now;
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   function onScanKeyDown(e) {
     if (e.key === "Enter") {
       const val = e.currentTarget.value.trim();
@@ -73,6 +101,20 @@ export default function Parts({ pushToast }) {
       e.currentTarget.value = "";
     }
   }
+
+  // Filter by Stock Class field: Engine = "E", Electric = "EL"
+  const filteredRows = rows.filter((p) => {
+    if (stockClass === "all") return true;
+
+    // Dataset says the field is literally "Stock Class"
+    const raw = p?.["stock_class"];
+
+    const v = String(raw ?? "").trim().toUpperCase();
+
+    if (stockClass === "engine") return v === "E";
+    if (stockClass === "electric") return v === "EL";
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -138,7 +180,6 @@ export default function Parts({ pushToast }) {
               ▾
             </div>
           </div>
-
         </div>
       </div>
 
@@ -147,6 +188,7 @@ export default function Parts({ pushToast }) {
           {/* Search input + Refresh */}
           <div className="flex gap-2">
             <input
+              ref={searchRef}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={placeholderMap[searchField]}
@@ -164,12 +206,12 @@ export default function Parts({ pushToast }) {
             <div className="text-sm text-[var(--rb-muted)]">Loading…</div>
           ) : (
             <div className="space-y-3">
-              {rows.length === 0 ? (
+              {filteredRows.length === 0 ? (
                 <div className="text-sm text-[var(--rb-muted)] border border-[var(--rb-border)] rounded-2xl p-4 bg-[var(--rb-surface)]/20">
                   No matches.
                 </div>
               ) : (
-                rows.map((p) => (
+                filteredRows.map((p) => (
                   <PartCard
                     key={p.number}
                     part={p}
@@ -185,6 +227,39 @@ export default function Parts({ pushToast }) {
         </div>
 
         <aside className="space-y-3">
+          {/* Stock Class filter (above Scan box) */}
+          <div className="border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-surface)]/20 p-4">
+            <h2 className="text-lg font-semibold text-[var(--rb-text)]">Stock Class</h2>
+            <p className="mt-1 text-xs text-[var(--rb-muted)]">Filter the list by stock class.</p>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[
+                { key: "all", label: "All" },
+                { key: "engine", label: "Engine" },
+                { key: "electric", label: "Electric" },
+              ].map((b) => (
+                <button
+                  key={b.key}
+                  onClick={() => setStockClass(b.key)}
+                  className={[
+                    "px-4 py-2 rounded-xl text-base font-semibold border transition",
+                    "bg-[var(--rb-surface)]/40 border-[var(--rb-border)]",
+                    stockClass === b.key
+                      ? "text-[var(--rb-text)] ring-1 ring-[var(--rb-accent)]/45"
+                      : "text-[var(--rb-muted)] hover:bg-[var(--rb-base)]/70 hover:text-[var(--rb-text)]",
+                  ].join(" ")}
+                >
+                  {b.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-3 text-xs text-[var(--rb-muted)]">
+              Showing <span className="font-semibold text-[var(--rb-text)]">{filteredRows.length}</span>{" "}
+              of <span className="font-semibold text-[var(--rb-text)]">{rows.length}</span> parts
+            </div>
+          </div>
+
           {/* Scan box */}
           <div className="border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-surface)]/20 p-4">
             <h2 className="text-lg font-semibold text-[var(--rb-text)]">Scan box</h2>
