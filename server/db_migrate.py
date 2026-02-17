@@ -1,5 +1,5 @@
 """
-Simple database migration script for adding ROB table.
+Simple database migration script for ROBoard.
 
 Run manually:
     python db_migrate.py
@@ -7,16 +7,14 @@ Run manually:
 
 import sqlite3
 from pathlib import Path
+from typing import Callable, List, Tuple
 
 # Adjust path if needed
 DB_PATH = Path("app.db")  # change if your DB lives elsewhere
-import sqlite3
-from pathlib import Path
-from typing import Callable, List, Tuple
 
 Migration = Tuple[str, Callable[[sqlite3.Connection], None]]
-
 MIGRATIONS: List[Migration] = []
+
 
 def migration(mid: str):
     """
@@ -57,7 +55,6 @@ def migrate(db_path: Path = DB_PATH) -> None:
 
     print(f"Connecting to database: {db_path.resolve()}")
 
-    # Ensure deterministic order
     migrations_sorted = sorted(MIGRATIONS, key=lambda x: x[0])
 
     conn = sqlite3.connect(db_path)
@@ -154,18 +151,18 @@ def m001_init(conn: sqlite3.Connection) -> None:
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS wishlist (
-        part_number TEXT PRIMARY KEY,
-        toggled_at TEXT,
-        FOREIGN KEY(part_number) REFERENCES parts(number) ON DELETE CASCADE
+            part_number TEXT PRIMARY KEY,
+            toggled_at TEXT,
+            FOREIGN KEY(part_number) REFERENCES parts(number) ON DELETE CASCADE
         );
     """)
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS rob (
-        part_number TEXT PRIMARY KEY,
-        rob REAL NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY(part_number) REFERENCES parts(number) ON DELETE CASCADE
+            part_number TEXT PRIMARY KEY,
+            rob REAL NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY(part_number) REFERENCES parts(number) ON DELETE CASCADE
         );
     """)
 
@@ -194,8 +191,36 @@ def m003_add_parts_ean(conn: sqlite3.Connection) -> None:
         return
 
     conn.execute("ALTER TABLE parts ADD COLUMN ean TEXT;")
-    # Optional: add an index for lookup speed
     conn.execute("CREATE INDEX IF NOT EXISTS idx_parts_ean ON parts(ean);")
+
+
+@migration("004_add_location_overrides")
+def m004_add_location_overrides(conn: sqlite3.Connection) -> None:
+    """
+    Add table to store operator-changed locations, without touching imported default_location.
+
+    One active override per part_number (PRIMARY KEY).
+    """
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS location_overrides (
+            part_number TEXT PRIMARY KEY,
+            new_location TEXT NOT NULL,
+            note TEXT,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY(part_number) REFERENCES parts(number) ON DELETE CASCADE
+        );
+    """)
+
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_location_overrides_updated_at
+        ON location_overrides(updated_at);
+    """)
+
+    # Optional but useful if you frequently search by new location:
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_location_overrides_new_location
+        ON location_overrides(new_location);
+    """)
 
 
 if __name__ == "__main__":

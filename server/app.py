@@ -14,10 +14,12 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, HTTPException
 # from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from datetime import datetime, timezone
 
 from db import init_db, get_conn
 from import_excel import import_parts_replace_all, import_orders_replace_all
 from export_rob import export_rob_xlsx
+from export_locations import export_locations_xlsx
 
 from usb import find_usb_mount
 from export_wishlist import export_wishlist_xlsx
@@ -50,6 +52,10 @@ class RobIn(BaseModel):
     """
     rob: float
 
+class LocationOverrideIn(BaseModel):
+    part_number: str
+    new_location: str
+    note: str | None = None
 
 @app.on_event("startup")
 def startup():
@@ -155,7 +161,7 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
 
     Returns:
         list[dict]:
-            List of parts including wishlist status and ROB information.
+            List of parts including wishlist status, ROB, and location override info.
     """
     q = (q or "").strip()
     field = (field or "all").lower()
@@ -166,10 +172,7 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
         limit = 50
     limit = max(1, min(limit, 200))
 
-    # Split the query into tokens (order-independent search)
-    # e.g. "sea water pump" -> ["sea", "water", "pump"]
     tokens = [t for t in q.split() if t]
-    # Debug logging to verify tokenization and field selection
     print("TOKENS:", tokens, "FIELD:", field)
 
     conn = get_conn()
@@ -180,24 +183,25 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
                 SELECT p.*,
                     EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
                     r.rob AS rob,
-                    r.updated_at AS rob_updated_at
+                    r.updated_at AS rob_updated_at,
+                    lo.new_location AS overridden_location,
+                    lo.updated_at AS location_updated_at
                 FROM parts p
                 LEFT JOIN rob r ON r.part_number = p.number
-                ORDER BY p.default_location, p.number
+                LEFT JOIN location_overrides lo ON lo.part_number = p.number
+                ORDER BY COALESCE(lo.new_location, p.default_location), p.number
                 LIMIT ?
                 """,
                 (limit,),
             ).fetchall()
             return [dict(r) for r in rows]
 
-        # Helper: build WHERE clause + params for tokenized search
         params = []
 
         def like_for(token: str) -> str:
             return f"%{token}%"
 
         if field == "name":
-            # AND across tokens within the name field
             where_parts = []
             for t in tokens:
                 where_parts.append("p.name LIKE ?")
@@ -212,10 +216,12 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
             where = " AND ".join(where_parts)
 
         elif field == "location":
+            # Search both original location and overridden location
             where_parts = []
             for t in tokens:
-                where_parts.append("p.default_location LIKE ?")
-                params.append(like_for(t))
+                where_parts.append("(p.default_location LIKE ? OR lo.new_location LIKE ?)")
+                like = like_for(t)
+                params.extend([like, like])
             where = " AND ".join(where_parts)
 
         elif field == "ean":
@@ -227,13 +233,10 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
 
         else:
             # field == "all"
-            # For each token, it can match ANY of the fields (OR),
-            # but EVERY token must match somewhere (AND).
             token_groups = []
             for t in tokens:
                 like = like_for(t)
 
-                # Apply dot-stripping trick only for long digit-only tokens
                 if t.isdigit() and len(t) >= 5:
                     token_groups.append(
                         "("
@@ -242,10 +245,11 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
                         "p.name LIKE ? OR "
                         "p.makers_reference LIKE ? OR "
                         "p.default_location LIKE ? OR "
+                        "lo.new_location LIKE ? OR "
                         "p.ean LIKE ?"
                         ")"
                     )
-                    params.extend([like, like, like, like, like, like])
+                    params.extend([like, like, like, like, like, like, like])
                 else:
                     token_groups.append(
                         "("
@@ -253,10 +257,11 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
                         "p.name LIKE ? OR "
                         "p.makers_reference LIKE ? OR "
                         "p.default_location LIKE ? OR "
+                        "lo.new_location LIKE ? OR "
                         "p.ean LIKE ?"
                         ")"
                     )
-                    params.extend([like, like, like, like, like])
+                    params.extend([like, like, like, like, like, like])
 
             where = " AND ".join(token_groups)
 
@@ -265,11 +270,14 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
             SELECT p.*,
                 EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
                 r.rob AS rob,
-                r.updated_at AS rob_updated_at
+                r.updated_at AS rob_updated_at,
+                lo.new_location AS overridden_location,
+                lo.updated_at AS location_updated_at
             FROM parts p
             LEFT JOIN rob r ON r.part_number = p.number
+            LEFT JOIN location_overrides lo ON lo.part_number = p.number
             WHERE {where}
-            ORDER BY p.default_location, p.number
+            ORDER BY COALESCE(lo.new_location, p.default_location), p.number
             LIMIT ?
             """,
             (*params, limit),
@@ -632,3 +640,107 @@ def set_rob(part_number: str, payload: RobIn):
         return dict(row)
     finally:
         conn.close()
+
+@app.get("/api/locations")
+def list_location_overrides(q: str = "", limit: int = 200):
+    q = (q or "").strip()
+    limit = max(1, min(int(limit or 200), 500))
+
+    conn = get_conn()
+    try:
+        if q:
+            rows = conn.execute(
+                """
+                SELECT lo.part_number, p.name, p.default_location AS old_location,
+                    lo.new_location, lo.note, lo.updated_at
+                FROM location_overrides lo
+                JOIN parts p ON p.number = lo.part_number
+                WHERE lo.part_number LIKE ? OR p.name LIKE ? OR lo.new_location LIKE ?
+                ORDER BY lo.updated_at DESC
+                LIMIT ?
+                """,
+                (f"%{q}%", f"%{q}%", f"%{q}%", limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT lo.part_number, p.name, p.default_location AS old_location,
+                    lo.new_location, lo.note, lo.updated_at
+                FROM location_overrides lo
+                JOIN parts p ON p.number = lo.part_number
+                ORDER BY lo.updated_at DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+@app.post("/api/locations/set")
+def set_location_override(payload: LocationOverrideIn):
+    part_number = (payload.part_number or "").strip()
+    new_location = (payload.new_location or "").strip()
+    note = (payload.note or "").strip() or None
+
+    if not part_number:
+        raise HTTPException(status_code=400, detail="part_number is required")
+    if not new_location:
+        raise HTTPException(status_code=400, detail="new_location is required")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    conn = get_conn()
+    try:
+        # Ensure part exists (optional but sensible)
+        exists = conn.execute(
+            "SELECT 1 FROM parts WHERE number = ? LIMIT 1",
+            (part_number,),
+        ).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail="Part not found")
+
+        conn.execute(
+            """
+            INSERT INTO location_overrides (part_number, new_location, note, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(part_number) DO UPDATE SET
+                new_location=excluded.new_location,
+                note=excluded.note,
+                updated_at=excluded.updated_at
+            """,
+            (part_number, new_location, note, now),
+        )
+        conn.commit()
+        return {"ok": True, "part_number": part_number, "new_location": new_location, "updated_at": now}
+    finally:
+        conn.close()
+
+@app.post("/api/locations/export")
+def export_location_overrides():
+    if SPARES_ENV == "dev":
+        export_dir = get_export_dir(None)
+        usb = None
+    else:
+        usb = find_usb_mount()
+        export_dir = get_export_dir(usb)
+
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT lo.part_number, p.name, p.default_location AS old_location,
+                lo.new_location, lo.note, lo.updated_at
+            FROM location_overrides lo
+            JOIN parts p ON p.number = lo.part_number
+            ORDER BY lo.updated_at DESC
+            """
+        ).fetchall()
+        data = [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+    # Write xlsx
+    out_path = export_locations_xlsx(data, export_dir)  # we add this helper
+    return {"ok": True, "count": len(data), "file": str(out_path), "usb": (usb is not None)}
