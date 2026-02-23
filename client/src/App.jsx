@@ -7,6 +7,7 @@ import Parts from "./pages/Parts.jsx";
 import Wishlist from "./pages/Wishlist.jsx";
 {/*import Orders from "./pages/Orders.jsx"; */}
 import ImportPage from "./pages/Import.jsx";
+import Locations from "./pages/LocationsPage.jsx";
 import Rob from "./pages/Rob.jsx";
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/" element={<Parts pushToast={pushToast} />} />
         <Route path="/wishlist" element={<Wishlist />} />
         {/*<Route path="/orders" element={<Orders />} /> */}
+        {<Route path="/locations" element={<Locations />} /> }
         <Route path="/rob" element={<Rob pushToast={pushToast} />} />
         <Route path="/import" element={<ImportPage pushToast={pushToast} />} />
       </Routes>

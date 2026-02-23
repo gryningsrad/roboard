@@ -44,6 +44,16 @@ export default function Parts({ pushToast }) {
     pushToast?.("success", `ROB saved for ${partNumber}`);
   }
 
+  function onLocationUpdated(partNumber, newLocation, updatedAt) {
+    setRows((prev) =>
+      prev.map((p) =>
+        p.number === partNumber
+          ? { ...p, overridden_location: newLocation, location_updated_at: updatedAt }
+          : p
+      )
+    );
+  }
+
   async function load() {
     setLoading(true);
     try {
@@ -217,6 +227,7 @@ export default function Parts({ pushToast }) {
                     part={p}
                     onToggleWishlist={toggleWishlist}
                     onRobUpdated={onRobUpdated}
+                    onLocationUpdated={onLocationUpdated}
                     robFlash={robFlashKey === p.number}
                     pushToast={pushToast}
                   />
