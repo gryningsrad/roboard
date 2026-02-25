@@ -11,10 +11,11 @@ Designed to run on a Raspberry Pi kiosk environment with optional USB export.
 """
 
 from pathlib import Path
+from datetime import datetime, timezone
 from fastapi import FastAPI, UploadFile, File, HTTPException
 # from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from datetime import datetime, timezone
+
 
 from db import init_db, get_conn
 from import_excel import import_parts_replace_all, import_orders_replace_all
@@ -395,10 +396,16 @@ def get_wishlist():
         rows = conn.execute(
             """
             SELECT p.*,
-                1 AS wishlisted
+                1 AS wishlisted,
+                r.rob AS rob,
+                r.updated_at AS rob_updated_at,
+                lo.new_location AS overridden_location,
+                lo.updated_at AS location_updated_at
             FROM wishlist w
             JOIN parts p ON p.number = w.part_number
-            ORDER BY p.default_location, p.number
+            LEFT JOIN rob r ON r.part_number = p.number
+            LEFT JOIN location_overrides lo ON lo.part_number = p.number
+            ORDER BY COALESCE(lo.new_location, p.default_location), p.number
             """
         ).fetchall()
         return [dict(r) for r in rows]

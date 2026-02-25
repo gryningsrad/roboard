@@ -2,13 +2,43 @@ import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
 import PartCard from "../components/PartCard.jsx";
 
-export default function Wishlist() {
+export default function Wishlist({ pushToast }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [msg, setMsg] = useState("");
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // track which card should flash when ROB is updated (same as Parts.jsx)
+  const [robFlashKey, setRobFlashKey] = useState(null);
+
+  function triggerRobFlash(partNumber) {
+    setRobFlashKey(partNumber);
+    setTimeout(() => {
+      setRobFlashKey((k) => (k === partNumber ? null : k));
+    }, 450);
+  }
+
+  function onRobUpdated(partNumber, newRob, updatedAt) {
+    setRows((prev) =>
+      prev.map((p) =>
+        p.number === partNumber ? { ...p, rob: newRob, rob_updated_at: updatedAt } : p
+      )
+    );
+    triggerRobFlash(partNumber);
+    pushToast?.("success", `ROB saved for ${partNumber}`);
+  }
+
+  function onLocationUpdated(partNumber, newLocation, updatedAt) {
+    setRows((prev) =>
+      prev.map((p) =>
+        p.number === partNumber
+          ? { ...p, overridden_location: newLocation, location_updated_at: updatedAt }
+          : p
+      )
+    );
+  }
 
   async function load() {
     setLoading(true);
@@ -93,7 +123,15 @@ export default function Wishlist() {
             </div>
           ) : (
             rows.map((p) => (
-              <PartCard key={p.number} part={p} onToggleWishlist={toggleWishlist} />
+              <PartCard
+                key={p.number}
+                part={p}
+                onToggleWishlist={toggleWishlist}
+                onRobUpdated={onRobUpdated}
+                onLocationUpdated={onLocationUpdated}
+                robFlash={robFlashKey === p.number}
+                pushToast={pushToast}
+              />
             ))
           )}
         </div>

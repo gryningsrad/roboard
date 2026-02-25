@@ -93,9 +93,9 @@ export default function Rob({ pushToast }) {
             </div>
           ) : (
             <div className="border border-[var(--rb-border)] rounded-2xl overflow-hidden bg-[var(--rb-surface)]/10">
-              <div className="grid grid-cols-12 gap-2 px-4 py-3 text-xs uppercase tracking-[0.14em] text-[var(--rb-dim)] bg-[var(--rb-surface)]/20">
-                <div className="col-span-2">Number</div>
-                <div className="col-span-5">Name</div>
+              <div className="grid grid-cols-12 gap-2 px-4 py-3 text-xs uppercase tracking-[0.14em] text-[var(--rb-dim)] bg-[var(--rb-surface)]/20 min-w-0">
+                <div className="col-span-3">Number</div>
+                <div className="col-span-4">Name</div>
                 <div className="col-span-2">Location</div>
                 <div className="col-span-1">
                   <span className="text-[var(--rb-accent)] font-extrabold">ROB</span>
@@ -106,12 +106,12 @@ export default function Rob({ pushToast }) {
               {rows.map((r) => (
                 <div
                   key={r.number}
-                  className="grid grid-cols-12 gap-2 px-4 py-3 text-sm border-t border-[var(--rb-border)]"
+                  className="grid grid-cols-12 gap-2 px-4 py-3 text-sm border-t border-[var(--rb-border)] min-w-0"
                 >
-                  <div className="col-span-2 font-semibold text-[var(--rb-text)]">
+                  <div className="col-span-3 font-semibold text-[var(--rb-text)] truncate">
                     <span className="font-mono">{r.number}</span>
                   </div>
-                  <div className="col-span-5 text-[var(--rb-muted)] truncate">{r.name}</div>
+                  <div className="col-span-4 text-[var(--rb-muted)] truncate">{r.name}</div>
                   <div className="col-span-2 text-[var(--rb-muted)] truncate">
                     {r.default_location || "—"}
                   </div>

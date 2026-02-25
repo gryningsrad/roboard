@@ -21,7 +21,7 @@ export default function App() {
     <Shell>
       <Routes>
         <Route path="/" element={<Parts pushToast={pushToast} />} />
-        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/wishlist" element={<Wishlist pushToast={pushToast} />} />
         {/*<Route path="/orders" element={<Orders />} /> */}
         {<Route path="/locations" element={<Locations />} /> }
         <Route path="/rob" element={<Rob pushToast={pushToast} />} />
