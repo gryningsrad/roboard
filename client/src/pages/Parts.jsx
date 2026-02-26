@@ -271,7 +271,7 @@ export default function Parts({ pushToast }) {
             </div>
           </div>
 
-          {/* Scan box */}
+          {/* Scan box }
           <div className="border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-surface)]/20 p-4">
             <h2 className="text-lg font-semibold text-[var(--rb-text)]">Scan box</h2>
             <p className="mt-1 text-xs text-[var(--rb-muted)]">
@@ -290,6 +290,7 @@ export default function Parts({ pushToast }) {
               Focus scan box
             </button>
           </div>
+          */}
 
           {/* Quick tips */}
           <div className="border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-surface)]/20 p-4">

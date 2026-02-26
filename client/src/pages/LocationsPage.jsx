@@ -2,6 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
 
 export default function LocationsPage({ pushToast }) {
+
+  // convert ISO-like timestamp to 'yyyy-mm-dd hh:mm' local time
+  function formatDateTime(ts) {
+    if (!ts) return "—";
+    const d = new Date(ts);
+    if (isNaN(d)) return ts; // fall back if parse failed
+    const pad = (n) => n.toString().padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
+      d.getHours()
+    )}:${pad(d.getMinutes())}`;
+  }
   const [q, setQ] = useState("");
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -153,7 +164,7 @@ export default function LocationsPage({ pushToast }) {
                     {r.note || "—"}
                   </td>
                   <td className="px-4 py-3 text-[var(--rb-muted)]">
-                    {r.updated_at || "—"}
+                    {formatDateTime(r.updated_at)}
                   </td>
                 </tr>
               ))}
