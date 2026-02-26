@@ -8,5 +8,4 @@ server/__pycache__/
 server/.devenv
 server/.venv
 .vscode/
-server/spares_export/
-server/spares_export_dev/
+server/spares_export*/
