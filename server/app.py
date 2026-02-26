@@ -745,9 +745,24 @@ def export_location_overrides():
             """
         ).fetchall()
         data = [dict(r) for r in rows]
+        count = len(data)
     finally:
         conn.close()
 
     # Write xlsx
-    out_path = export_locations_xlsx(data, export_dir)  # we add this helper
-    return {"ok": True, "count": len(data), "file": str(out_path), "usb": (usb is not None)}
+    out_path = export_locations_xlsx(data, export_dir)
+
+    # Clear location overrides after successful export
+    conn = get_conn()
+    try:
+        conn.execute("DELETE FROM location_overrides;")
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "exported_file": str(out_path),
+        "export_dir": str(export_dir),
+        "usb_detected": bool(usb),
+        "rows_exported": count,
+    }

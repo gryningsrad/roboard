@@ -49,10 +49,11 @@ export default function LocationsPage({ pushToast }) {
     setBusyExport(true);
     try {
       const r = await apiPost("/api/locations/export", {});
+      setRows([]);
       pushToast?.({
         type: "success",
         title: "Export completed",
-        message: `Exported ${r?.count ?? 0} rows`,
+        message: `Exported ${r?.rows_exported ?? 0} rows and cleared`,
       });
     } catch (e) {
       pushToast?.({
