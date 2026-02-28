@@ -49,7 +49,8 @@ export default function LocationsPage({ pushToast }) {
     setBusyExport(true);
     try {
       const r = await apiPost("/api/locations/export", {});
-      setRows([]);
+      // refresh from server to reflect any changes (and clear rows on success)
+      await refresh();
       pushToast?.({
         type: "success",
         title: "Export completed",
