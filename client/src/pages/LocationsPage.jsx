@@ -46,12 +46,26 @@ export default function LocationsPage({ pushToast }) {
 
   const count = useMemo(() => rows.length, [rows]);
 
-  async function onExport() {
+  // user clicked export button, show confirmation if there are rows
+  function requestExport() {
+    if (rows.length === 0) {
+      pushToast?.({
+        type: "error",
+        title: "Nothing to export",
+        message: "No location overrides available to export.",
+      });
+      return;
+    }
+    setConfirmOpen(true);
+  }
+
+  // confirmed by user, call API
+  async function confirmExport() {
+    setConfirmOpen(false);
     setBusyExport(true);
     try {
       const r = await apiPost("/api/locations/export", {});
-      // refresh from server to reflect any changes (and clear rows on success)
-      await refresh();
+      await refresh(); // clear rows on success
       pushToast?.({
         type: "success",
         title: "Export completed",
@@ -86,8 +100,8 @@ export default function LocationsPage({ pushToast }) {
         </div>
 
         <button
-          onClick={onExport}
-          disabled={busyExport}
+          onClick={requestExport}
+          disabled={busyExport || rows.length === 0}
           className="
             rounded-xl px-4 py-2 text-sm
             bg-[var(--rb-accent)]/15
@@ -133,6 +147,46 @@ export default function LocationsPage({ pushToast }) {
           {busy ? "Loading..." : "Search"}
         </button>
       </div>
+
+      {/* Confirm modal */}
+      {confirmOpen ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-lg border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-bg)] p-5 shadow-xl">
+            <h3 className="text-lg font-extrabold tracking-tight text-[var(--rb-text)]">
+              Export location overrides?
+            </h3>
+            <p className="mt-2 text-sm text-[var(--rb-muted)]">
+              This will export{" "}
+              <span className="font-mono text-[var(--rb-text)]">{rows.length}</span>{" "}
+              override{rows.length !== 1 ? "s" : ""} to an Excel file and then{" "}
+              <span className="font-semibold text-[var(--rb-text)]">clear the list</span>.
+            </p>
+
+            <div className="mt-5 flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[var(--rb-surface)]/20 hover:bg-[var(--rb-surface)]/35 border border-[var(--rb-border)] text-sm font-semibold text-[var(--rb-muted)] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmExport}
+                className="px-4 py-2 rounded-xl bg-[var(--rb-base)] hover:bg-[var(--rb-base)]/85 border border-[var(--rb-accent)]/50 text-[var(--rb-text)] text-sm font-extrabold transition ring-1 ring-[var(--rb-accent)]/35"
+              >
+                Export &amp; clear
+              </button>
+            </div>
+
+            <div className="mt-3 text-xs text-[var(--rb-dim)]">
+              Tip: make sure you're ready to clear the overrides when exporting.
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-[var(--rb-border)]">
