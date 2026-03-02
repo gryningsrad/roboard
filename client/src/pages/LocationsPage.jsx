@@ -17,6 +17,7 @@ export default function LocationsPage({ pushToast }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [busyExport, setBusyExport] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function refresh() {
     setBusy(true);
