@@ -98,54 +98,99 @@ export default function LocationsPage({ pushToast }) {
             {count} active override{count !== 1 ? "s" : ""}
           </p>
         </div>
-
-        <button
-          onClick={requestExport}
-          disabled={busyExport || rows.length === 0}
-          className="
-            rounded-xl px-4 py-2 text-sm
-            bg-[var(--rb-accent)]/15
-            border border-[var(--rb-accent)]/30
-            hover:bg-[var(--rb-accent)]/25
-            disabled:opacity-60
-            transition
-          "
-        >
-          {busyExport ? "Exporting..." : "Export XLSX"}
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="flex gap-3">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Search part number, name or new location..."
-          className="
-            flex-1 px-4 py-2 text-sm
-            rounded-xl
-            bg-[var(--rb-surface)]/35
-            border border-[var(--rb-border)]
-            text-[var(--rb-text)]
-            outline-none
-            focus:ring-2 focus:ring-[var(--rb-accent)]/35
-          "
-        />
-
         <button
           onClick={refresh}
           disabled={busy}
-          className="
-            rounded-xl px-4 py-2 text-sm
-            border border-[var(--rb-border)]
-            hover:bg-[var(--rb-surface)]/35
-            disabled:opacity-60
-            transition
-          "
+          className="px-5 py-3 rounded-2xl bg-[var(--rb-base)] border border-[var(--rb-border)] text-sm font-semibold text-[var(--rb-text)] hover:bg-[var(--rb-surface)]/70 transition"
         >
-          {busy ? "Loading..." : "Search"}
+          Refresh
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+        {/* Main column (search + table) */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Search removed - not needed for Locations page */}
+
+          {/* Table */}
+          <div className="overflow-hidden rounded-2xl border border-[var(--rb-border)]">
+              <div>
+                <table className="w-full text-sm table-auto">
+                <thead className="bg-[var(--rb-surface)]/35 text-[var(--rb-muted)]">
+                  <tr>
+                    <th className="text-left font-medium px-4 py-3">Part</th>
+                    <th className="text-left font-medium px-4 py-3">Name</th>
+                    <th className="text-left font-medium px-4 py-3">Old Location</th>
+                    <th className="text-left font-medium px-4 py-3">New Location</th>
+                    <th className="text-left font-medium px-4 py-3">Note</th>
+                    <th className="text-left font-medium px-4 py-3">Updated</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {rows.map((r) => (
+                    <tr
+                      key={r.part_number}
+                      className="border-t border-[var(--rb-border)]"
+                    >
+                      <td className="px-4 py-3 font-mono">{r.part_number}</td>
+                      <td className="px-4 py-3">{r.name}</td>
+                      <td className="px-4 py-3 text-[var(--rb-muted)]">
+                        {r.old_location || "—"}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-[var(--rb-text)]">
+                        {r.new_location || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-[var(--rb-muted)]">
+                        {r.note || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-[var(--rb-muted)]">
+                        {formatDateTime(r.updated_at)}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {rows.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-4 py-10 text-center text-[var(--rb-muted)]"
+                      >
+                        No location overrides have been set.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions sidebar */}
+        <aside className="lg:col-span-1 border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-surface)]/20 p-4 sticky top-24">
+          <h2 className="text-sm font-semibold text-[var(--rb-text)]">Actions</h2>
+          <p className="mt-1 text-xs text-[var(--rb-muted)]">
+            Export the current location override list to an Excel file and clear the
+            list.
+          </p>
+
+          <button
+            onClick={requestExport}
+            disabled={busyExport || rows.length === 0}
+            className={[
+              "mt-4 w-full px-4 py-4 rounded-2xl text-base font-extrabold border transition",
+              busyExport || rows.length === 0
+                ? "bg-[var(--rb-surface)]/10 border-[var(--rb-border)] text-white/35 cursor-not-allowed"
+                : "bg-[var(--rb-base)] border-[var(--rb-accent)]/45 text-[var(--rb-text)] hover:bg-[var(--rb-base)]/85 ring-1 ring-[var(--rb-accent)]/35",
+            ].join(" ")}
+          >
+            {busyExport ? "Exporting…" : "Export XLSX"}
+          </button>
+
+          <div className="mt-3 text-xs text-[var(--rb-dim)]">
+            Items: <span className="font-mono text-[var(--rb-text)]">{rows.length}</span>
+          </div>
+        </aside>
       </div>
 
       {/* Confirm modal */}
@@ -188,58 +233,7 @@ export default function LocationsPage({ pushToast }) {
         </div>
       ) : null}
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--rb-border)]">
-        <div className="overflow-x-auto">
-          <table className="min-w-[900px] w-full text-sm">
-            <thead className="bg-[var(--rb-surface)]/35 text-[var(--rb-muted)]">
-              <tr>
-                <th className="text-left font-medium px-4 py-3">Part</th>
-                <th className="text-left font-medium px-4 py-3">Name</th>
-                <th className="text-left font-medium px-4 py-3">Old Location</th>
-                <th className="text-left font-medium px-4 py-3">New Location</th>
-                <th className="text-left font-medium px-4 py-3">Note</th>
-                <th className="text-left font-medium px-4 py-3">Updated</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.part_number}
-                  className="border-t border-[var(--rb-border)]"
-                >
-                  <td className="px-4 py-3 font-mono">{r.part_number}</td>
-                  <td className="px-4 py-3">{r.name}</td>
-                  <td className="px-4 py-3 text-[var(--rb-muted)]">
-                    {r.old_location || "—"}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-[var(--rb-text)]">
-                    {r.new_location || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-[var(--rb-muted)]">
-                    {r.note || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-[var(--rb-muted)]">
-                    {formatDateTime(r.updated_at)}
-                  </td>
-                </tr>
-              ))}
-
-              {rows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-10 text-center text-[var(--rb-muted)]"
-                  >
-                    No location overrides have been set.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* duplicate table removed - main table lives inside the grid's main column */}
     </div>
   );
 }

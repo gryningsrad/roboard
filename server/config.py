@@ -17,13 +17,17 @@ from pathlib import Path
 #   - In dev, export to DEV_LOCAL_EXPORTS (no USB expected)
 # -----------------------------------------------------------------------------
 
-APP_NAME = "Roboard"
+APP_NAME = "ROBoard"
 
 SPARES_ENV = os.getenv("SPARES_ENV", "prod").lower()  # "dev" or "prod"
 
 # Local export roots (override with env vars if you want)
-DEV_LOCAL_EXPORTS = Path(os.getenv("DEV_LOCAL_EXPORTS", "./spares_exports_dev"))
+DEV_LOCAL_EXPORTS = Path(os.getenv("DEV_LOCAL_EXPORTS", "./"))
 PROD_LOCAL_EXPORTS = Path(os.getenv("PROD_LOCAL_EXPORTS", "/home/mambo/Documents"))
+
+# Make sure that the folders exists
+DEV_LOCAL_EXPORTS.mkdir(parents=True, exist_ok=True)
+PROD_LOCAL_EXPORTS.mkdir(parents=True, exist_ok=True)
 
 # Subfolder used within the chosen export root
 EXPORT_SUBDIR = os.getenv("SPARES_EXPORT_SUBDIR", "spares_exports")

@@ -107,18 +107,23 @@ export default function PartCard({
   const locInputRef = useRef(null);
 
   // Keep modal default value in sync if the part changes in parent state
+  // only update when modal is not open, otherwise the user may be typing
   useEffect(() => {
     const newDisplay = ((part.overridden_location || "").trim() && (part.overridden_location || "").trim() !== (part.default_location || "").trim())
       ? (part.overridden_location || "").trim()
       : (part.default_location || "").trim();
 
-    setLocVal(newDisplay || "");
-  }, [part.default_location, part.overridden_location]);
+    if (!locOpen) {
+      setLocVal(newDisplay || "");
+    }
+  }, [part.default_location, part.overridden_location, locOpen]);
 
   useEffect(() => {
     if (locOpen) {
       setLocErr("");
       setLocNote("");
+      // clear the input so current location is only shown as placeholder
+      setLocVal("");
       setTimeout(() => locInputRef.current?.focus(), 0);
     }
   }, [locOpen]);
@@ -314,7 +319,7 @@ export default function PartCard({
               ref={locInputRef}
               value={locVal}
               onChange={(e) => setLocVal(e.target.value)}
-              placeholder="Enter new location"
+              placeholder={displayLoc ? `Current: ${displayLoc}` : "Enter new location"}
               className="mt-4 w-full bg-[var(--rb-surface)]/25 border border-[var(--rb-border)] rounded-2xl px-4 py-3 text-sm text-black placeholder:text-black/40 outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
