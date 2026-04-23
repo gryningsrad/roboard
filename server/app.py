@@ -534,17 +534,22 @@ def get_rob_list():
 
     Returns:
         list[dict]:
-            List of parts with associated ROB values and last update timestamps.
+            List of parts with associated ROB, wishlist, and location override data.
     """
     conn = get_conn()
     try:
         rows = conn.execute(
             """
-            SELECT p.number, p.name, p.makers_reference, p.default_location,
-                r.rob, r.updated_at
+            SELECT p.*,
+                EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
+                r.rob AS rob,
+                r.updated_at AS rob_updated_at,
+                lo.new_location AS overridden_location,
+                lo.updated_at AS location_updated_at
             FROM rob r
             JOIN parts p ON p.number = r.part_number
-            ORDER BY p.default_location, p.number
+            LEFT JOIN location_overrides lo ON lo.part_number = p.number
+            ORDER BY COALESCE(lo.new_location, p.default_location), p.number
             """
         ).fetchall()
         return [dict(r) for r in rows]
@@ -680,23 +685,35 @@ def list_location_overrides(q: str = "", limit: int = 200):
         if q:
             rows = conn.execute(
                 """
-                SELECT lo.part_number, p.name, p.default_location AS old_location,
-                    lo.new_location, lo.note, lo.updated_at
+                SELECT p.*,
+                    EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
+                    r.rob AS rob,
+                    r.updated_at AS rob_updated_at,
+                    lo.new_location AS overridden_location,
+                    lo.note AS location_note,
+                    lo.updated_at AS location_updated_at
                 FROM location_overrides lo
                 JOIN parts p ON p.number = lo.part_number
-                WHERE lo.part_number LIKE ? OR p.name LIKE ? OR lo.new_location LIKE ?
+                LEFT JOIN rob r ON r.part_number = p.number
+                WHERE lo.part_number LIKE ? OR p.name LIKE ? OR lo.new_location LIKE ? OR p.default_location LIKE ?
                 ORDER BY lo.updated_at DESC
                 LIMIT ?
                 """,
-                (f"%{q}%", f"%{q}%", f"%{q}%", limit),
+                (f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", limit),
             ).fetchall()
         else:
             rows = conn.execute(
                 """
-                SELECT lo.part_number, p.name, p.default_location AS old_location,
-                    lo.new_location, lo.note, lo.updated_at
+                SELECT p.*,
+                    EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
+                    r.rob AS rob,
+                    r.updated_at AS rob_updated_at,
+                    lo.new_location AS overridden_location,
+                    lo.note AS location_note,
+                    lo.updated_at AS location_updated_at
                 FROM location_overrides lo
                 JOIN parts p ON p.number = lo.part_number
+                LEFT JOIN rob r ON r.part_number = p.number
                 ORDER BY lo.updated_at DESC
                 LIMIT ?
                 """,

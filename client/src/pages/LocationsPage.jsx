@@ -1,39 +1,57 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
+import PartCard from "../components/PartCard.jsx";
 
 export default function LocationsPage({ pushToast, refreshNavCounts }) {
-
-  // convert ISO-like timestamp to 'yyyy-mm-dd hh:mm' local time
-  function formatDateTime(ts) {
-    if (!ts) return "—";
-    const d = new Date(ts);
-    if (isNaN(d)) return ts; // fall back if parse failed
-    const pad = (n) => n.toString().padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
-      d.getHours()
-    )}:${pad(d.getMinutes())}`;
-  }
-  const [q, setQ] = useState("");
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [busyExport, setBusyExport] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [robFlashKey, setRobFlashKey] = useState(null);
+
+  function triggerRobFlash(partNumber) {
+    setRobFlashKey(partNumber);
+    setTimeout(() => {
+      setRobFlashKey((k) => (k === partNumber ? null : k));
+    }, 450);
+  }
+
+  function onRobUpdated(partNumber, newRob, updatedAt) {
+    setRows((prev) =>
+      prev.map((p) =>
+        p.number === partNumber ? { ...p, rob: newRob, rob_updated_at: updatedAt } : p
+      )
+    );
+    triggerRobFlash(partNumber);
+    pushToast?.("success", `ROB saved for ${partNumber}`);
+  }
+
+  function onLocationUpdated(partNumber, newLocation, updatedAt, note) {
+    setRows((prev) =>
+      prev.map((p) =>
+        p.number === partNumber
+          ? {
+              ...p,
+              overridden_location: newLocation,
+              location_updated_at: updatedAt,
+              location_note: note,
+            }
+          : p
+      )
+    );
+  }
 
   async function refresh() {
     setBusy(true);
+    setMsg("");
     try {
-      const qs = new URLSearchParams();
-      if ((q || "").trim()) qs.set("q", q.trim());
-      qs.set("limit", "300");
-
-      const data = await apiGet(`/api/locations?${qs.toString()}`);
+      const data = await apiGet("/api/locations?limit=300");
       setRows(Array.isArray(data) ? data : []);
     } catch (e) {
-      pushToast?.({
-        type: "error",
-        title: "Failed to load locations",
-        message: String(e?.message || e),
-      });
+      const m = e?.message || "Failed to load locations.";
+      setMsg(m);
+      pushToast?.("error", m);
     } finally {
       setBusy(false);
     }
@@ -49,11 +67,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
   // user clicked export button, show confirmation if there are rows
   function requestExport() {
     if (rows.length === 0) {
-      pushToast?.({
-        type: "error",
-        title: "Nothing to export",
-        message: "No location overrides available to export.",
-      });
+      setMsg("No location overrides available to export.");
       return;
     }
     setConfirmOpen(true);
@@ -63,28 +77,36 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
   async function confirmExport() {
     setConfirmOpen(false);
     setBusyExport(true);
+    setMsg("");
     try {
       const r = await apiPost("/api/locations/export", {});
       await refresh(); // clear rows on success
       refreshNavCounts?.();
-      pushToast?.({
-        type: "success",
-        title: "Export completed",
-        message: `Exported ${r?.rows_exported ?? 0} rows and cleared`,
-      });
+      setMsg(`Exported ${r?.rows_exported ?? 0} row(s) and cleared the location override list.`);
+      pushToast?.("success", `Location overrides exported (${r?.rows_exported ?? 0}) and cleared`);
     } catch (e) {
-      pushToast?.({
-        type: "error",
-        title: "Export failed",
-        message: String(e?.message || e),
-      });
+      const m = e?.message || "Export failed.";
+      setMsg(m);
+      pushToast?.("error", m);
     } finally {
       setBusyExport(false);
     }
   }
 
-  function onKeyDown(e) {
-    if (e.key === "Enter") refresh();
+  async function toggleWishlist(partNumber) {
+    try {
+      const res = await apiPost(`/api/wishlist/toggle/${encodeURIComponent(partNumber)}`);
+      setRows((prev) =>
+        prev.map((p) =>
+          p.number === partNumber ? { ...p, wishlisted: res.wishlisted ? 1 : 0 } : p
+        )
+      );
+      refreshNavCounts?.();
+    } catch (e) {
+      const m = e?.message || "Failed to update wishlist.";
+      setMsg(m);
+      pushToast?.("error", m);
+    }
   }
 
   return (
@@ -108,63 +130,34 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
         </button>
       </div>
 
+      {msg ? (
+        <div className="text-sm text-[var(--rb-text)] border border-[var(--rb-border)] rounded-2xl p-3 bg-[var(--rb-surface)]/20 break-all">
+          {msg}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
-        {/* Main column (search + table) */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Search removed - not needed for Locations page */}
-
-          {/* Table */}
-          <div className="overflow-hidden rounded-2xl border border-[var(--rb-border)]">
-              <div>
-                <table className="w-full text-sm table-auto">
-                <thead className="bg-[var(--rb-surface)]/35 text-[var(--rb-muted)]">
-                  <tr>
-                    <th className="text-left font-medium px-4 py-3">Part</th>
-                    <th className="text-left font-medium px-4 py-3">Name</th>
-                    <th className="text-left font-medium px-4 py-3">Old Location</th>
-                    <th className="text-left font-medium px-4 py-3">New Location</th>
-                    <th className="text-left font-medium px-4 py-3">Note</th>
-                    <th className="text-left font-medium px-4 py-3">Updated</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {rows.map((r) => (
-                    <tr
-                      key={r.part_number}
-                      className="border-t border-[var(--rb-border)]"
-                    >
-                      <td className="px-4 py-3 font-mono">{r.part_number}</td>
-                      <td className="px-4 py-3">{r.name}</td>
-                      <td className="px-4 py-3 text-[var(--rb-muted)]">
-                        {r.old_location || "—"}
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-[var(--rb-text)]">
-                        {r.new_location || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-[var(--rb-muted)]">
-                        {r.note || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-[var(--rb-muted)]">
-                        {formatDateTime(r.updated_at)}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {rows.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="px-4 py-10 text-center text-[var(--rb-muted)]"
-                      >
-                        No location overrides have been set.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+        <div className="lg:col-span-4 space-y-3">
+          {busy ? (
+            <div className="text-sm text-[var(--rb-muted)]">Loading…</div>
+          ) : rows.length === 0 ? (
+            <div className="text-sm text-[var(--rb-muted)] border border-[var(--rb-border)] rounded-2xl p-4 bg-[var(--rb-surface)]/20">
+              No location overrides have been set.
             </div>
-          </div>
+          ) : (
+            rows.map((p) => (
+              <PartCard
+                key={p.number}
+                part={p}
+                onToggleWishlist={toggleWishlist}
+                onRobUpdated={onRobUpdated}
+                onLocationUpdated={onLocationUpdated}
+                refreshNavCounts={refreshNavCounts}
+                robFlash={robFlashKey === p.number}
+                pushToast={pushToast}
+              />
+            ))
+          )}
         </div>
 
         {/* Actions sidebar */}
@@ -233,8 +226,6 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
           </div>
         </div>
       ) : null}
-
-      {/* duplicate table removed - main table lives inside the grid's main column */}
     </div>
   );
 }

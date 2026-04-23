@@ -30,11 +30,11 @@ export default function Wishlist({ pushToast, refreshNavCounts }) {
     pushToast?.("success", `ROB saved for ${partNumber}`);
   }
 
-  function onLocationUpdated(partNumber, newLocation, updatedAt) {
+  function onLocationUpdated(partNumber, newLocation, updatedAt, note) {
     setRows((prev) =>
       prev.map((p) =>
         p.number === partNumber
-          ? { ...p, overridden_location: newLocation, location_updated_at: updatedAt }
+          ? { ...p, overridden_location: newLocation, location_updated_at: updatedAt, location_note: note }
           : p
       )
     );

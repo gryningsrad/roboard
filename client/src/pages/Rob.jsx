@@ -1,13 +1,41 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
+import PartCard from "../components/PartCard.jsx";
 
 export default function Rob({ pushToast, refreshNavCounts }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [msg, setMsg] = useState("");
-
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [robFlashKey, setRobFlashKey] = useState(null);
+
+  function triggerRobFlash(partNumber) {
+    setRobFlashKey(partNumber);
+    setTimeout(() => {
+      setRobFlashKey((k) => (k === partNumber ? null : k));
+    }, 450);
+  }
+
+  function onRobUpdated(partNumber, newRob, updatedAt) {
+    setRows((prev) =>
+      prev.map((p) =>
+        p.number === partNumber ? { ...p, rob: newRob, rob_updated_at: updatedAt } : p
+      )
+    );
+    triggerRobFlash(partNumber);
+    pushToast?.("success", `ROB saved for ${partNumber}`);
+  }
+
+  function onLocationUpdated(partNumber, newLocation, updatedAt, note) {
+    setRows((prev) =>
+      prev.map((p) =>
+        p.number === partNumber
+          ? { ...p, overridden_location: newLocation, location_updated_at: updatedAt, location_note: note }
+          : p
+      )
+    );
+  }
 
   async function load() {
     setLoading(true);
@@ -27,6 +55,22 @@ export default function Rob({ pushToast, refreshNavCounts }) {
   useEffect(() => {
     load();
   }, []);
+
+  async function toggleWishlist(partNumber) {
+    try {
+      const res = await apiPost(`/api/wishlist/toggle/${encodeURIComponent(partNumber)}`);
+      setRows((prev) =>
+        prev.map((p) =>
+          p.number === partNumber ? { ...p, wishlisted: res.wishlisted ? 1 : 0 } : p
+        )
+      );
+      refreshNavCounts?.();
+    } catch (e) {
+      const m = e?.message || "Failed to update wishlist.";
+      setMsg(m);
+      pushToast?.("error", m);
+    }
+  }
 
   function requestExport() {
     if (rows.length === 0) {
@@ -93,36 +137,18 @@ export default function Rob({ pushToast, refreshNavCounts }) {
               No ROB values set.
             </div>
           ) : (
-            <div className="border border-[var(--rb-border)] rounded-2xl overflow-hidden bg-[var(--rb-surface)]/10">
-              <div className="grid grid-cols-12 gap-2 px-4 py-3 text-xs uppercase tracking-[0.14em] text-[var(--rb-dim)] bg-[var(--rb-surface)]/20 min-w-0">
-                <div className="col-span-3">Number</div>
-                <div className="col-span-4">Name</div>
-                <div className="col-span-2">Location</div>
-                <div className="col-span-1">
-                  <span className="text-[var(--rb-accent)] font-extrabold">ROB</span>
-                </div>
-                <div className="col-span-2">Updated</div>
-              </div>
-
-              {rows.map((r) => (
-                <div
-                  key={r.number}
-                  className="grid grid-cols-12 gap-2 px-4 py-3 text-sm border-t border-[var(--rb-border)] min-w-0"
-                >
-                  <div className="col-span-3 font-semibold text-[var(--rb-text)] truncate">
-                    <span className="font-mono">{r.number}</span>
-                  </div>
-                  <div className="col-span-4 text-[var(--rb-muted)] truncate">{r.name}</div>
-                  <div className="col-span-2 text-[var(--rb-muted)] truncate">
-                    {r.default_location || "—"}
-                  </div>
-                  <div className="col-span-1 text-[var(--rb-text)] font-semibold">
-                    {r.rob}
-                  </div>
-                  <div className="col-span-2 text-[var(--rb-dim)] truncate">{r.updated_at}</div>
-                </div>
-              ))}
-            </div>
+            rows.map((p) => (
+              <PartCard
+                key={p.number}
+                part={p}
+                onToggleWishlist={toggleWishlist}
+                onRobUpdated={onRobUpdated}
+                onLocationUpdated={onLocationUpdated}
+                refreshNavCounts={refreshNavCounts}
+                robFlash={robFlashKey === p.number}
+                pushToast={pushToast}
+              />
+            ))
           )}
         </div>
 

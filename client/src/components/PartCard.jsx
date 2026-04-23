@@ -162,7 +162,7 @@ export default function PartCard({
       });
 
       // Let parent update its cached parts list (best UX)
-      onLocationUpdated?.(part.number, v, res.updated_at);
+      onLocationUpdated?.(part.number, v, res.updated_at, n || null);
       refreshNavCounts?.();
 
       pushToast?.("success", `Location updated to "${v}"`);
@@ -250,6 +250,12 @@ export default function PartCard({
             {part.location_updated_at ? (
               <div className="mt-1 text-xs text-[var(--rb-dim)]">
                 Location updated: {part.location_updated_at}
+              </div>
+            ) : null}
+
+            {part.location_note ? (
+              <div className="mt-1 text-xs text-[var(--rb-dim)]">
+                Note: <span className="text-[var(--rb-muted)]">{part.location_note}</span>
               </div>
             ) : null}
           </div>
