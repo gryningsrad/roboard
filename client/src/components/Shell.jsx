@@ -2,13 +2,24 @@ import { NavLink } from "react-router-dom";
 
 const navItems = [
   { to: "/", label: "Parts" },
-  { to: "/rob", label: "ROB" },
-  { to: "/wishlist", label: "Wishlist" },
-  { to: "/locations", label: "Locations" },
+  { to: "/rob", label: "ROB", countKey: "rob" },
+  { to: "/wishlist", label: "Wishlist", countKey: "wishlist" },
+  { to: "/locations", label: "Locations", countKey: "locations" },
   { to: "/import", label: "Import" },
 ];
 
-function NavItem({ to, label }) {
+function formatLabel(label, count) {
+  if (count === null || count === undefined) return label;
+
+  return (
+    <>
+      <span>{label}</span>{" "}
+      <span className="text-sm text-[var(--rb-accent)]">({count})</span>
+    </>
+  );
+}
+
+function NavItem({ to, label, count }) {
   return (
     <NavLink
       to={to}
@@ -22,12 +33,14 @@ function NavItem({ to, label }) {
         ].join(" ")
       }
     >
-      {label}
+      <span className="inline-flex items-center gap-2">
+        {formatLabel(label, count)}
+      </span>
     </NavLink>
   );
 }
 
-export default function Shell({ children }) {
+export default function Shell({ children, navCounts }) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--rb-border)] bg-[var(--rb-bg)]/85 backdrop-blur">
@@ -52,7 +65,12 @@ export default function Shell({ children }) {
 
           <nav className="flex items-center gap-2 bg-[var(--rb-surface)]/70 border border-[var(--rb-border)] rounded-2xl p-2">
             {navItems.map((n) => (
-              <NavItem key={n.to} to={n.to} label={n.label} />
+              <NavItem
+                key={n.to}
+                to={n.to}
+                label={n.label}
+                count={n.countKey ? navCounts?.[n.countKey] : null}
+              />
             ))}
           </nav>
         </div>

@@ -23,6 +23,7 @@ export default function PartCard({
   onToggleWishlist,
   onRobUpdated,
   onLocationUpdated, // NEW optional callback
+  refreshNavCounts,
   robFlash,
   pushToast,
 }) {
@@ -80,6 +81,7 @@ export default function PartCard({
     try {
       const res = await apiPost(`/api/rob/${encodeURIComponent(part.number)}`, { rob: num });
       onRobUpdated?.(part.number, res.rob, res.updated_at);
+      refreshNavCounts?.();
       setRobOpen(false);
     } catch (e) {
       const msg = e?.message || "Failed to save ROB";
@@ -161,6 +163,7 @@ export default function PartCard({
 
       // Let parent update its cached parts list (best UX)
       onLocationUpdated?.(part.number, v, res.updated_at);
+      refreshNavCounts?.();
 
       pushToast?.("success", `Location updated to "${v}"`);
       setLocOpen(false);

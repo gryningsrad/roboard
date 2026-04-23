@@ -2,6 +2,7 @@ PRAGMA foreign_keys = ON;
 
 DROP TABLE IF EXISTS rob;
 DROP TABLE IF EXISTS wishlist;
+DROP TABLE IF EXISTS location_overrides;
 DROP TABLE IF EXISTS parts;
 DROP TABLE IF EXISTS orders;
 
@@ -61,3 +62,17 @@ CREATE TABLE rob (
   updated_at TEXT NOT NULL,
   FOREIGN KEY(part_number) REFERENCES parts(number) ON DELETE CASCADE
 );
+
+CREATE TABLE location_overrides (
+  part_number TEXT PRIMARY KEY,
+  new_location TEXT NOT NULL,
+  note TEXT,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY(part_number) REFERENCES parts(number) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_location_overrides_updated_at
+ON location_overrides(updated_at);
+
+CREATE INDEX idx_location_overrides_new_location
+ON location_overrides(new_location);

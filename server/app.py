@@ -382,6 +382,28 @@ def simple_search_parts(q: str = "", field: str = "all", limit: int = 50):
     finally:
         conn.close()
 
+@app.get("/api/nav-counts")
+def get_nav_counts():
+    """
+    Retrieve counts for the menu-backed lists.
+
+    Returns:
+        dict:
+            Counts for ROB, wishlist, and location overrides.
+    """
+    conn = get_conn()
+    try:
+        wishlist = conn.execute("SELECT COUNT(*) AS c FROM wishlist").fetchone()["c"]
+        rob = conn.execute("SELECT COUNT(*) AS c FROM rob").fetchone()["c"]
+        locations = conn.execute("SELECT COUNT(*) AS c FROM location_overrides").fetchone()["c"]
+        return {
+            "wishlist": int(wishlist or 0),
+            "rob": int(rob or 0),
+            "locations": int(locations or 0),
+        }
+    finally:
+        conn.close()
+
 @app.get("/api/wishlist")
 def get_wishlist():
     """

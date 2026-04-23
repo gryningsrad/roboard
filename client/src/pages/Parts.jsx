@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
 import PartCard from "../components/PartCard.jsx";
 
-export default function Parts({ pushToast }) {
+export default function Parts({ pushToast, refreshNavCounts }) {
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(50);
   const [rows, setRows] = useState([]);
@@ -76,6 +76,7 @@ export default function Parts({ pushToast }) {
       setRows((prev) =>
         prev.map((p) => (p.number === partNumber ? { ...p, wishlisted: res.wishlisted ? 1 : 0 } : p))
       );
+      refreshNavCounts?.();
     } catch (e) {
       console.error(e);
     }
@@ -228,6 +229,7 @@ export default function Parts({ pushToast }) {
                     onToggleWishlist={toggleWishlist}
                     onRobUpdated={onRobUpdated}
                     onLocationUpdated={onLocationUpdated}
+                    refreshNavCounts={refreshNavCounts}
                     robFlash={robFlashKey === p.number}
                     pushToast={pushToast}
                   />

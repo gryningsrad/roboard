@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { apiPost } from "../api.js";
 
-export default function ImportPage({ pushToast }) {
+export default function ImportPage({ pushToast, refreshNavCounts }) {
   const [partsFile, setPartsFile] = useState(null);
   const [ordersFile, setOrdersFile] = useState(null);
 
@@ -26,6 +26,7 @@ export default function ImportPage({ pushToast }) {
       fd.append("file", partsFile);
       const res = await apiPost("/api/import/parts", fd);
       setLastParts(res);
+      refreshNavCounts?.();
       pushToast(
         "success",
         `Parts imported: ${res.parts_imported}. Wishlist exported to: ${res.exported_wishlist_file}`

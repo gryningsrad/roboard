@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
 
-export default function Rob({ pushToast }) {
+export default function Rob({ pushToast, refreshNavCounts }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -43,6 +43,7 @@ export default function Rob({ pushToast }) {
     try {
       const res = await apiPost("/api/rob/export");
       setRows([]);
+      refreshNavCounts?.();
       const m = `Exported ${res.rows_exported} item(s) to: ${res.exported_file} (USB: ${
         res.usb_detected ? "Yes" : "No"
       })`;

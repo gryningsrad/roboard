@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
 import PartCard from "../components/PartCard.jsx";
 
-export default function Wishlist({ pushToast }) {
+export default function Wishlist({ pushToast, refreshNavCounts }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -58,6 +58,7 @@ export default function Wishlist({ pushToast }) {
   async function toggleWishlist(partNumber) {
     const res = await apiPost(`/api/wishlist/toggle/${encodeURIComponent(partNumber)}`);
     if (!res.wishlisted) setRows((prev) => prev.filter((p) => p.number !== partNumber));
+    refreshNavCounts?.();
   }
 
   function requestExport() {
@@ -75,6 +76,7 @@ export default function Wishlist({ pushToast }) {
     try {
       const res = await apiPost("/api/wishlist/export");
       setRows([]);
+      refreshNavCounts?.();
       setMsg(
         `Exported ${res.rows_exported} item(s) to: ${res.exported_file} (USB: ${
           res.usb_detected ? "Yes" : "No"
@@ -129,6 +131,7 @@ export default function Wishlist({ pushToast }) {
                 onToggleWishlist={toggleWishlist}
                 onRobUpdated={onRobUpdated}
                 onLocationUpdated={onLocationUpdated}
+                refreshNavCounts={refreshNavCounts}
                 robFlash={robFlashKey === p.number}
                 pushToast={pushToast}
               />

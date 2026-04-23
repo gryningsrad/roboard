@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
 
-export default function LocationsPage({ pushToast }) {
+export default function LocationsPage({ pushToast, refreshNavCounts }) {
 
   // convert ISO-like timestamp to 'yyyy-mm-dd hh:mm' local time
   function formatDateTime(ts) {
@@ -66,6 +66,7 @@ export default function LocationsPage({ pushToast }) {
     try {
       const r = await apiPost("/api/locations/export", {});
       await refresh(); // clear rows on success
+      refreshNavCounts?.();
       pushToast?.({
         type: "success",
         title: "Export completed",
