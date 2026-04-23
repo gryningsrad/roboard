@@ -9,3 +9,4 @@ server/.devenv
 server/.venv
 .vscode/
 server/spares_export*/
+AMOSStocksearch.code-workspace
