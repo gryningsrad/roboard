@@ -2,11 +2,33 @@ import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../api.js";
 import PartCard from "../components/PartCard.jsx";
 
+function TrashIcon({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
 export default function LocationsPage({ pushToast, refreshNavCounts }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [busyExport, setBusyExport] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState("");
   const [robFlashKey, setRobFlashKey] = useState(null);
 
@@ -109,6 +131,30 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
     }
   }
 
+  function requestDelete(part) {
+    setDeleteTarget(part);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget?.number) return;
+
+    setDeleting(true);
+    setMsg("");
+    try {
+      await apiPost(`/api/locations/delete/${encodeURIComponent(deleteTarget.number)}`);
+      setRows((prev) => prev.filter((p) => p.number !== deleteTarget.number));
+      refreshNavCounts?.();
+      pushToast?.("success", `Location override removed for ${deleteTarget.number}`);
+      setDeleteTarget(null);
+    } catch (e) {
+      const m = e?.message || "Failed to delete location override.";
+      setMsg(m);
+      pushToast?.("error", m);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -146,16 +192,35 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
             </div>
           ) : (
             rows.map((p) => (
-              <PartCard
-                key={p.number}
-                part={p}
-                onToggleWishlist={toggleWishlist}
-                onRobUpdated={onRobUpdated}
-                onLocationUpdated={onLocationUpdated}
-                refreshNavCounts={refreshNavCounts}
-                robFlash={robFlashKey === p.number}
-                pushToast={pushToast}
-              />
+              <div key={p.number} className="flex items-stretch gap-3">
+                <div className="flex-1 min-w-0">
+                  <PartCard
+                    part={p}
+                    onToggleWishlist={toggleWishlist}
+                    onRobUpdated={onRobUpdated}
+                    onLocationUpdated={onLocationUpdated}
+                    refreshNavCounts={refreshNavCounts}
+                    robFlash={robFlashKey === p.number}
+                    pushToast={pushToast}
+                  />
+                </div>
+
+                <div className="w-32 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => requestDelete(p)}
+                    className="h-full w-full inline-flex flex-col items-center justify-center gap-2 px-2 py-2 rounded-2xl border border-red-500/35 bg-red-950/20 text-sm font-semibold text-red-200 hover:bg-red-950/35 transition"
+                    title="Delete location override"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                    <span className="text-center leading-tight">
+                      Delete
+                      <br />
+                      Override
+                    </span>
+                  </button>
+                </div>
+              </div>
             ))
           )}
         </div>
@@ -222,6 +287,52 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
 
             <div className="mt-3 text-xs text-[var(--rb-dim)]">
               Tip: make sure you're ready to clear the overrides when exporting.
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-lg border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-bg)] p-5 shadow-xl">
+            <h3 className="text-lg font-extrabold tracking-tight text-[var(--rb-text)]">
+              Delete location override?
+            </h3>
+            <p className="mt-2 text-sm text-[var(--rb-muted)]">
+              This will remove the override for{" "}
+              <span className="font-mono text-[var(--rb-text)]">{deleteTarget.number}</span>.
+            </p>
+            <p className="mt-2 text-sm text-[var(--rb-muted)]">
+              The part will go back to its original location:
+              {" "}
+              <span className="font-semibold text-[var(--rb-text)]">
+                {deleteTarget.default_location || "—"}
+              </span>
+            </p>
+
+            <div className="mt-5 flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-xl bg-[var(--rb-surface)]/20 hover:bg-[var(--rb-surface)]/35 border border-[var(--rb-border)] text-sm font-semibold text-[var(--rb-muted)] transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="px-4 py-2 rounded-xl bg-red-950/35 hover:bg-red-950/50 border border-red-500/45 text-red-100 text-sm font-extrabold transition disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete override"}
+              </button>
+            </div>
+
+            <div className="mt-3 text-xs text-[var(--rb-dim)]">
+              This removes only the local override, not the part itself.
             </div>
           </div>
         </div>

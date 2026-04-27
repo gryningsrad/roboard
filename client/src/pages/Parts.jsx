@@ -96,6 +96,7 @@ export default function Parts({ pushToast, refreshNavCounts }) {
       // If pressed twice within 400ms → clear
       if (delta < 400) {
         setQ("");
+        setSearchField("all");
       }
 
       lastEscRef.current = now;

@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 const navItems = [
   { to: "/", label: "Parts" },
@@ -45,7 +45,11 @@ export default function Shell({ children, navCounts }) {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-[var(--rb-border)] bg-[var(--rb-bg)]/85 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-5 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
+          <Link
+            to="/"
+            className="flex items-center gap-4 rounded-2xl transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
+            aria-label="Go to Parts search"
+          >
             <div className="h-14 w-14 rounded-2xl bg-[var(--rb-surface)] grid place-items-center">
               <span className="text-lg font-extrabold tracking-tight text-[var(--rb-text)]">
                 <span className="text-[var(--rb-accent)]">R</span>B
@@ -61,7 +65,7 @@ export default function Shell({ children, navCounts }) {
                 Remaining On Board – Under Control
               </div>
             </div>
-          </div>
+          </Link>
 
           <nav className="flex items-center gap-2 bg-[var(--rb-surface)]/70 border border-[var(--rb-border)] rounded-2xl p-2">
             {navItems.map((n) => (

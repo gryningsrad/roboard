@@ -202,6 +202,9 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
         def like_for(token: str) -> str:
             return f"%{token}%"
 
+        def prefix_like_for(token: str) -> str:
+            return f"{token}%"
+
         if field == "name":
             where_parts = []
             for t in tokens:
@@ -213,7 +216,7 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
             where_parts = []
             for t in tokens:
                 where_parts.append("p.makers_reference LIKE ?")
-                params.append(like_for(t))
+                params.append(prefix_like_for(t))
             where = " AND ".join(where_parts)
 
         elif field == "location":
@@ -760,6 +763,27 @@ def set_location_override(payload: LocationOverrideIn):
         )
         conn.commit()
         return {"ok": True, "part_number": part_number, "new_location": new_location, "updated_at": now}
+    finally:
+        conn.close()
+
+@app.post("/api/locations/delete/{part_number}")
+def delete_location_override(part_number: str):
+    part_number = (part_number or "").strip()
+    if not part_number:
+        raise HTTPException(status_code=400, detail="part_number is required")
+
+    conn = get_conn()
+    try:
+        existing = conn.execute(
+            "SELECT 1 FROM location_overrides WHERE part_number = ? LIMIT 1",
+            (part_number,),
+        ).fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Location override not found")
+
+        conn.execute("DELETE FROM location_overrides WHERE part_number = ?", (part_number,))
+        conn.commit()
+        return {"ok": True, "part_number": part_number, "deleted": True}
     finally:
         conn.close()
 

@@ -116,6 +116,7 @@ export default function ImportPage({ pushToast, refreshNavCounts }) {
         </ResultCard>
       ) : null}
 
+      {/* Import Orders 
       <Section
         title="Import Orders"
         subtitle="Replaces all orders (header list)."
@@ -131,7 +132,7 @@ export default function ImportPage({ pushToast, refreshNavCounts }) {
           <ResultRow label="Orders imported" value={String(lastOrders.orders_imported)} />
           <ResultRow label="Sheet used" value={lastOrders.sheet_used} mono />
         </ResultCard>
-      ) : null}
+      ) : null} */}
 
       <div className="border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-surface)]/20 p-4">
         <h2 className="text-sm font-semibold text-[var(--rb-text)]">File expectations</h2>
