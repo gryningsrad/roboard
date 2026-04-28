@@ -16,7 +16,7 @@ import MobileScan from "./pages/MobileScan.jsx";
 import MobileAssetDetail from "./pages/MobileAssetDetail.jsx";
 import MobileResultList from "./pages/MobileResultList.jsx";
 import MobileRob from "./pages/MobileRob.jsx";
-import MobileLocations from "./pages/MobileWishlist.jsx";
+import MobileLocation from "./pages/MobileLocation.jsx";
 import MobileWishlistPage from "./pages/MobileWishlistPage.jsx";
 
 export default function App() {
@@ -55,8 +55,8 @@ export default function App() {
         <Route path="/roboard/mobile/scan" element={<MobileScan pushToast={pushToast} />} />
         <Route path="/roboard/mobile/assets/:id" element={<MobileAssetDetail pushToast={pushToast} />} />
         <Route path="/roboard/mobile/results" element={<MobileResultList />} />
-        <Route path="/roboard/mobile/rob" element={<MobileRob />} />
-        <Route path="/roboard/mobile/locations" element={<MobileLocations />} />
+        <Route path="/roboard/mobile/rob" element={<MobileRob pushToast={pushToast} />} />
+        <Route path="/roboard/mobile/locations" element={<MobileLocation pushToast={pushToast} />} />
         <Route path="/roboard/mobile/wishlist" element={<MobileWishlistPage pushToast={pushToast} />} />
 
         {/* Desktop Routes - wrapped in Shell */}

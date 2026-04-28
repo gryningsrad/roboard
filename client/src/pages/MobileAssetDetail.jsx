@@ -209,7 +209,7 @@ export default function MobileAssetDetail({ pushToast }) {
               type="number"
               value={robValue}
               onChange={(e) => setRobValue(e.target.value)}
-              placeholder="Enter new ROB value"
+              placeholder={`Current: ${currentRob}`}
               className="w-full h-16 px-6 rounded-lg bg-[var(--rb-bg)] border border-[var(--rb-border)] text-xl text-[var(--rb-text)] placeholder-[var(--rb-muted)] outline-none focus:border-[var(--rb-accent)] focus:ring-2 focus:ring-[var(--rb-accent)]/20"
               autoFocus
             />
@@ -235,7 +235,10 @@ export default function MobileAssetDetail({ pushToast }) {
         <div className="grid grid-cols-2 gap-4">
           {/* Update ROB */}
           <button
-            onClick={() => setShowRobInput(!showRobInput)}
+            onClick={() => {
+              setShowRobInput(!showRobInput);
+              if (!showRobInput) setRobValue("");
+            }}
             className="h-20 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-[var(--rb-text)] font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
           >
             📊 Update ROB

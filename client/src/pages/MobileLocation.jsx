@@ -4,21 +4,21 @@ import MobileLayout from "../components/MobileLayout.jsx";
 import { apiGet } from "../api.js";
 
 /**
- * MobileRob: Mobile interface for viewing and updating ROB (Running Operational Budget) values.
- * Displays a list of spare parts that have ROB values set.
+ * MobileLocation: Mobile interface for viewing and managing location overrides.
+ * Displays a list of spare parts that have location overwrites set.
  */
 
-export default function MobileRob({ pushToast }) {
+export default function MobileLocation({ pushToast }) {
   const navigate = useNavigate();
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    loadPartsWithRob();
+    loadPartsWithLocationOverride();
   }, []);
 
-  async function loadPartsWithRob() {
+  async function loadPartsWithLocationOverride() {
     setLoading(true);
     setError("");
 
@@ -26,14 +26,18 @@ export default function MobileRob({ pushToast }) {
       const data = await apiGet("/api/parts?limit=200");
       const results = Array.isArray(data) ? data : [];
       
-      // Filter for parts that have ROB values set
-      const withRob = results.filter(
-        (part) => part.rob !== null && part.rob !== undefined
+      // Filter for parts that have location overrides set
+      const withOverride = results.filter(
+        (part) =>
+          part.overridden_location &&
+          part.overridden_location.trim() &&
+          part.overridden_location.trim() !==
+            (part.default_location && part.default_location.trim())
       );
       
-      setParts(withRob);
-      if (withRob.length === 0) {
-        pushToast?.("info", "No parts with ROB values set yet");
+      setParts(withOverride);
+      if (withOverride.length === 0) {
+        pushToast?.("info", "No parts with location overwrites set yet");
       }
     } catch (err) {
       const msg = err?.message || "Failed to load parts";
@@ -60,13 +64,13 @@ export default function MobileRob({ pushToast }) {
   }
 
   return (
-    <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")} title="Parts with ROB">
+    <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")} title="Location Overrides">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-[var(--rb-text)]">Parts with ROB</h1>
+          <h1 className="text-3xl font-bold text-[var(--rb-text)]">Location Overrides</h1>
           <p className="text-lg text-[var(--rb-muted)]">
-            {parts.length} part{parts.length !== 1 ? "s" : ""} with ROB values set
+            {parts.length} part{parts.length !== 1 ? "s" : ""} with location overwrites
           </p>
         </div>
 
@@ -81,7 +85,7 @@ export default function MobileRob({ pushToast }) {
         {/* Empty State */}
         {parts.length === 0 && !error && (
           <div className="bg-[var(--rb-surface)]/50 border border-[var(--rb-border)] rounded-xl p-6 text-center space-y-4">
-            <p className="text-[var(--rb-muted)] text-lg">No parts with ROB values set yet</p>
+            <p className="text-[var(--rb-muted)] text-lg">No parts with location overwrites set yet</p>
             <button
               onClick={() => navigate("/roboard/mobile/scan")}
               className="w-full h-14 px-4 py-2 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
@@ -127,24 +131,32 @@ export default function MobileRob({ pushToast }) {
                     )}
                   </div>
 
-                  {/* ROB & Location Row */}
-                  <div className="flex flex-wrap gap-4 text-lg pt-2 border-t border-[var(--rb-border)]">
+                  {/* Location Override Row */}
+                  <div className="flex flex-wrap gap-6 text-lg pt-2 border-t border-[var(--rb-border)]">
                     <div>
-                      <p className="text-[var(--rb-muted)] text-sm">ROB</p>
-                      <p className="text-[var(--rb-accent)] font-bold text-2xl">
-                        {part.rob}
+                      <p className="text-[var(--rb-muted)] text-sm">Default Location</p>
+                      <p className="text-[var(--rb-text)] font-semibold">
+                        {(part.default_location && part.default_location.trim()) || "Not set"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-[var(--rb-muted)] text-sm">Location</p>
-                      <p className="text-[var(--rb-text)] font-semibold">
-                        {(part.overridden_location && part.overridden_location.trim()) ||
-                          (part.default_location && part.default_location.trim()) ||
-                          "Not set"}
+                      <p className="text-[var(--rb-muted)] text-sm">Override Location</p>
+                      <p className="text-[var(--rb-accent)] font-bold text-xl">
+                        {(part.overridden_location && part.overridden_location.trim()) || "—"}
                       </p>
                     </div>
                   </div>
+
+                  {/* ROB Info */}
+                  {part.rob !== null && part.rob !== undefined && (
+                    <div className="text-lg">
+                      <p className="text-[var(--rb-muted)] text-sm">ROB</p>
+                      <p className="text-[var(--rb-accent)] font-bold text-xl">
+                        {part.rob}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </button>
             ))}
