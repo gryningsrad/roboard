@@ -26,7 +26,8 @@ CREATE TABLE parts (
   weight_unit TEXT,
   weight REAL,
   alternative_available TEXT,
-  imported_at TEXT
+  imported_at TEXT,
+  ean TEXT
 );
 
 CREATE TABLE orders (
