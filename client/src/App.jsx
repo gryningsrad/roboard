@@ -11,6 +11,14 @@ import ImportPage from "./pages/Import.jsx";
 import Locations from "./pages/LocationsPage.jsx";
 import Rob from "./pages/Rob.jsx";
 
+// Mobile Routes
+import MobileScan from "./pages/MobileScan.jsx";
+import MobileAssetDetail from "./pages/MobileAssetDetail.jsx";
+import MobileResultList from "./pages/MobileResultList.jsx";
+import MobileRob from "./pages/MobileRob.jsx";
+import MobileLocations from "./pages/MobileWishlist.jsx";
+import MobileWishlistPage from "./pages/MobileWishlistPage.jsx";
+
 export default function App() {
   const [toast, setToast] = useState({ kind: "info", message: "" });
   const [navCounts, setNavCounts] = useState({
@@ -41,25 +49,43 @@ export default function App() {
   }, []);
 
   return (
-    <Shell navCounts={navCounts}>
+    <>
       <Routes>
+        {/* Mobile Routes - separate from desktop app */}
+        <Route path="/roboard/mobile/scan" element={<MobileScan pushToast={pushToast} />} />
+        <Route path="/roboard/mobile/assets/:id" element={<MobileAssetDetail pushToast={pushToast} />} />
+        <Route path="/roboard/mobile/results" element={<MobileResultList />} />
+        <Route path="/roboard/mobile/rob" element={<MobileRob />} />
+        <Route path="/roboard/mobile/locations" element={<MobileLocations />} />
+        <Route path="/roboard/mobile/wishlist" element={<MobileWishlistPage pushToast={pushToast} />} />
+
+        {/* Desktop Routes - wrapped in Shell */}
         <Route
-          path="/"
-          element={<Parts pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
-        />
-        <Route
-          path="/wishlist"
-          element={<Wishlist pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
-        />
-        {/*<Route path="/orders" element={<Orders />} /> */}
-        {<Route path="/locations" element={<Locations pushToast={pushToast} refreshNavCounts={refreshNavCounts} />} /> }
-        <Route
-          path="/rob"
-          element={<Rob pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
-        />
-        <Route
-          path="/import"
-          element={<ImportPage pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
+          path="*"
+          element={
+            <Shell navCounts={navCounts}>
+              <Routes>
+                <Route
+                  path="/"
+                  element={<Parts pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
+                />
+                <Route
+                  path="/wishlist"
+                  element={<Wishlist pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
+                />
+                {/*<Route path="/orders" element={<Orders />} /> */}
+                {<Route path="/locations" element={<Locations pushToast={pushToast} refreshNavCounts={refreshNavCounts} />} /> }
+                <Route
+                  path="/rob"
+                  element={<Rob pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
+                />
+                <Route
+                  path="/import"
+                  element={<ImportPage pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
+                />
+              </Routes>
+            </Shell>
+          }
         />
       </Routes>
 
@@ -68,6 +94,6 @@ export default function App() {
         message={toast.message}
         onClose={() => setToast((t) => ({ ...t, message: "" }))}
       />
-    </Shell>
+    </>
   );
 }

@@ -1,0 +1,48 @@
+{
+  "name": "ROBoard",
+  "short_name": "ROBoard",
+  "description": "ROBoard - Spare Parts & Asset Management for Mobile Scanning",
+  "start_url": "/roboard/mobile/scan",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "theme_color": "#050f22",
+  "background_color": "#071a33",
+  "categories": ["productivity", "utilities"],
+  "screenshots": [
+    {
+      "src": "/roboard-favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/roboard-favicon-16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/roboard-favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scan Barcode",
+      "short_name": "Scan",
+      "description": "Start scanning barcodes",
+      "url": "/roboard/mobile/scan",
+      "icons": []
+    },
+    {
+      "name": "Wishlist",
+      "short_name": "Wishlist",
+      "description": "View wishlist",
+      "url": "/roboard/mobile/wishlist",
+      "icons": []
+    }
+  ]
+}
