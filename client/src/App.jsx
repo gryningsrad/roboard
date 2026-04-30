@@ -52,12 +52,12 @@ export default function App() {
     <>
       <Routes>
         {/* Mobile Routes - separate from desktop app */}
-        <Route path="/roboard/mobile/scan" element={<MobileScan pushToast={pushToast} />} />
-        <Route path="/roboard/mobile/assets/:id" element={<MobileAssetDetail pushToast={pushToast} />} />
-        <Route path="/roboard/mobile/results" element={<MobileResultList />} />
-        <Route path="/roboard/mobile/rob" element={<MobileRob pushToast={pushToast} />} />
-        <Route path="/roboard/mobile/locations" element={<MobileLocation pushToast={pushToast} />} />
-        <Route path="/roboard/mobile/wishlist" element={<MobileWishlistPage pushToast={pushToast} />} />
+        <Route path="/m" element={<MobileScan pushToast={pushToast} />} />
+        <Route path="/m/assets/:id" element={<MobileAssetDetail pushToast={pushToast} />} />
+        <Route path="/m/results" element={<MobileResultList />} />
+        <Route path="/m/rob" element={<MobileRob pushToast={pushToast} />} />
+        <Route path="/m/location" element={<MobileLocation pushToast={pushToast} />} />
+        <Route path="/m/wishlist" element={<MobileWishlistPage pushToast={pushToast} />} />
 
         {/* Desktop Routes - wrapped in Shell */}
         <Route

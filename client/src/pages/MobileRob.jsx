@@ -46,12 +46,12 @@ export default function MobileRob({ pushToast }) {
   }
 
   function handleSelectPart(partNumber) {
-    navigate(`/roboard/mobile/assets/${encodeURIComponent(partNumber)}`);
+    navigate(`/m/assets/${encodeURIComponent(partNumber)}`);
   }
 
   if (loading) {
     return (
-      <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+      <MobileLayout showBack onBack={() => navigate("/m")}>
         <div className="text-center py-12">
           <p className="text-[var(--rb-muted)]">Loading parts...</p>
         </div>
@@ -60,7 +60,7 @@ export default function MobileRob({ pushToast }) {
   }
 
   return (
-    <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")} title="Parts with ROB">
+    <MobileLayout showBack onBack={() => navigate("/m")} title="Parts with ROB">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-2">
@@ -83,7 +83,7 @@ export default function MobileRob({ pushToast }) {
           <div className="bg-[var(--rb-surface)]/50 border border-[var(--rb-border)] rounded-xl p-6 text-center space-y-4">
             <p className="text-[var(--rb-muted)] text-lg">No parts with ROB values set yet</p>
             <button
-              onClick={() => navigate("/roboard/mobile/scan")}
+              onClick={() => navigate("/m")}
               className="w-full h-14 px-4 py-2 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
             >
               ← Back to Scan
@@ -154,7 +154,7 @@ export default function MobileRob({ pushToast }) {
         {/* Back to Scan Button */}
         {parts.length > 0 && (
           <button
-            onClick={() => navigate("/roboard/mobile/scan")}
+            onClick={() => navigate("/m")}
             className="w-full h-16 px-4 py-3 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
           >
             ← Back to Scan

@@ -16,13 +16,13 @@ export default function MobileResultList() {
   const query = state.query || "";
 
   function handleSelectAsset(assetNumber) {
-    navigate(`/roboard/mobile/assets/${encodeURIComponent(assetNumber)}`);
+    navigate(`/m/assets/${encodeURIComponent(assetNumber)}`);
   }
 
   return (
     <MobileLayout
       showBack
-      onBack={() => navigate("/roboard/mobile/scan")}
+      onBack={() => navigate("/m")}
       title="Results"
     >
       <div className="max-w-4xl mx-auto space-y-6">
@@ -96,7 +96,7 @@ export default function MobileResultList() {
 
         {/* Back to Scan Button */}
         <button
-          onClick={() => navigate("/roboard/mobile/scan")}
+          onClick={() => navigate("/m")}
           className="w-full h-16 px-4 py-3 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
         >
           ← Back to Scan

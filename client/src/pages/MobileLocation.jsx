@@ -50,12 +50,12 @@ export default function MobileLocation({ pushToast }) {
   }
 
   function handleSelectPart(partNumber) {
-    navigate(`/roboard/mobile/assets/${encodeURIComponent(partNumber)}`);
+    navigate(`/m/assets/${encodeURIComponent(partNumber)}`);
   }
 
   if (loading) {
     return (
-      <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+      <MobileLayout showBack onBack={() => navigate("/m")}>
         <div className="text-center py-12">
           <p className="text-[var(--rb-muted)]">Loading parts...</p>
         </div>
@@ -64,7 +64,7 @@ export default function MobileLocation({ pushToast }) {
   }
 
   return (
-    <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")} title="Location Overrides">
+    <MobileLayout showBack onBack={() => navigate("/m")} title="Location Overrides">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-2">
@@ -87,7 +87,7 @@ export default function MobileLocation({ pushToast }) {
           <div className="bg-[var(--rb-surface)]/50 border border-[var(--rb-border)] rounded-xl p-6 text-center space-y-4">
             <p className="text-[var(--rb-muted)] text-lg">No parts with location overwrites set yet</p>
             <button
-              onClick={() => navigate("/roboard/mobile/scan")}
+              onClick={() => navigate("/m")}
               className="w-full h-14 px-4 py-2 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
             >
               ← Back to Scan
@@ -166,7 +166,7 @@ export default function MobileLocation({ pushToast }) {
         {/* Back to Scan Button */}
         {parts.length > 0 && (
           <button
-            onClick={() => navigate("/roboard/mobile/scan")}
+            onClick={() => navigate("/m")}
             className="w-full h-16 px-4 py-3 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
           >
             ← Back to Scan

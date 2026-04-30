@@ -68,10 +68,10 @@ export default function MobileScan({ pushToast }) {
         pushToast?.("info", `No results found for "${cleanedQuery}"`);
       } else if (results.length === 1) {
         const asset = results[0];
-        navigate(`/roboard/mobile/assets/${encodeURIComponent(asset.number)}`);
+        navigate(`/m/assets/${encodeURIComponent(asset.number)}`);
       } else {
         setSearchResults(results);
-        navigate("/roboard/mobile/results", {
+        navigate("/m/results", {
           state: { results, query: cleanedQuery },
         });
       }
@@ -96,6 +96,14 @@ export default function MobileScan({ pushToast }) {
     if (cleanedQuery) {
       handleSearch(cleanedQuery);
     }
+  }
+
+  function handleClear() {
+    setSearchValue("");
+    setSearchResults([]);
+    setHasSearched(false);
+    setError("");
+    focusInput();
   }
 
   return (
@@ -146,6 +154,12 @@ export default function MobileScan({ pushToast }) {
               Searching...
             </div>
           )}
+
+          {hasSearched && searchResults.length === 0 && !loading && !error && (
+            <div className="text-center text-white text-lg font-semibold">
+              No part found
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -158,24 +172,33 @@ export default function MobileScan({ pushToast }) {
           </button>
 
           <button
-            onClick={() => navigate("/roboard/mobile/rob")}
+            onClick={handleClear}
             className="h-24 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-[var(--rb-text)] font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
           >
-            📊 Update ROB
+            🗑️ Clear
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <button
+            onClick={() => navigate("/m/rob")}
+            className="h-24 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-[var(--rb-text)] font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
+          >
+            📊 ROB
           </button>
 
           <button
-            onClick={() => navigate("/roboard/mobile/locations")}
-            className="h-24 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-[var(--rb-text)] font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
-          >
-            📍 Location
-          </button>
-
-          <button
-            onClick={() => navigate("/roboard/mobile/wishlist")}
+            onClick={() => navigate("/m/wishlist")}
             className="h-24 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-[var(--rb-text)] font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
           >
             ⭐ Wishlist
+          </button>
+
+          <button
+            onClick={() => navigate("/m/location")}
+            className="h-24 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-[var(--rb-text)] font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
+          >
+            📍 Location
           </button>
         </div>
 

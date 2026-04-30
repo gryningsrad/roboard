@@ -107,7 +107,7 @@ export default function MobileAssetDetail({ pushToast }) {
 
   if (loading) {
     return (
-      <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+      <MobileLayout showBack onBack={() => navigate("/m")}>
         <div className="text-center py-12">
           <p className="text-[var(--rb-muted)]">Loading asset...</p>
         </div>
@@ -117,14 +117,14 @@ export default function MobileAssetDetail({ pushToast }) {
 
   if (error || !asset) {
     return (
-      <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+      <MobileLayout showBack onBack={() => navigate("/m")}>
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="bg-red-900/30 border border-red-500/50 rounded-xl p-6 text-red-200">
             <p className="font-semibold text-lg">❌ Error</p>
             <p>{error}</p>
           </div>
           <button
-            onClick={() => navigate("/roboard/mobile/scan")}
+            onClick={() => navigate("/m")}
             className="w-full h-16 px-4 py-2 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
           >
             Back to Scan
@@ -142,7 +142,7 @@ export default function MobileAssetDetail({ pushToast }) {
   const currentRob = asset.rob !== null && asset.rob !== undefined ? asset.rob : "Not set";
 
   return (
-    <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+    <MobileLayout showBack onBack={() => navigate("/m")}>
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Asset Header */}
         <div className="space-y-4 bg-[var(--rb-surface)]/50 border border-[var(--rb-border)] rounded-xl p-6">
@@ -153,7 +153,9 @@ export default function MobileAssetDetail({ pushToast }) {
             {asset.number && (
               <div className="flex justify-between items-start">
                 <span className="text-[var(--rb-muted)]">Part Number:</span>
-                <span className="text-[var(--rb-text)] font-semibold">{asset.number}</span>
+                <span className="text-xs font-mono text-green-400 bg-green-950/40 border border-green-700/50 px-2 py-1 rounded-lg">
+                  {asset.number}
+                </span>
               </div>
             )}
 
@@ -171,21 +173,27 @@ export default function MobileAssetDetail({ pushToast }) {
               </div>
             )}
 
-            <div className="flex justify-between items-start">
-              <span className="text-[var(--rb-muted)]">ROB:</span>
-              <span className="text-[var(--rb-accent)] font-bold text-2xl">{currentRob}</span>
-            </div>
+            {(asset.rob !== null && asset.rob !== undefined) || asset.unit ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex justify-between items-start">
+                  <span className="text-[var(--rb-muted)]">ROB:</span>
+                  <span className="text-[var(--rb-accent)] font-bold text-2xl">{currentRob}</span>
+                </div>
 
-            {asset.unit && (
-              <div className="flex justify-between items-start">
-                <span className="text-[var(--rb-muted)]">Unit:</span>
-                <span className="text-[var(--rb-text)]">{asset.unit}</span>
+                {asset.unit && (
+                  <div className="flex justify-between items-start">
+                    <span className="text-[var(--rb-muted)]">Unit:</span>
+                    <span className="text-[var(--rb-text)]">{asset.unit}</span>
+                  </div>
+                )}
               </div>
-            )}
+            ) : null}
 
             <div className="flex justify-between items-start">
               <span className="text-[var(--rb-muted)]">Location:</span>
-              <span className="text-[var(--rb-text)] font-semibold">{currentLocation}</span>
+              <span className="text-xs font-semibold px-2 py-1 rounded-md border border-yellow-700/60 bg-yellow-900/60 text-yellow-200">
+                {currentLocation}
+              </span>
             </div>
 
             {asset.rob_updated_at && (
@@ -239,9 +247,9 @@ export default function MobileAssetDetail({ pushToast }) {
               setShowRobInput(!showRobInput);
               if (!showRobInput) setRobValue("");
             }}
-            className="h-20 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-[var(--rb-text)] font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
+            className="h-20 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-orange-400 font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
           >
-            📊 Update ROB
+            ROB
           </button>
 
           {/* Change Location (TODO) */}
@@ -266,7 +274,7 @@ export default function MobileAssetDetail({ pushToast }) {
 
           {/* Back to Scan */}
           <button
-            onClick={() => navigate("/roboard/mobile/scan")}
+            onClick={() => navigate("/m")}
             className="h-20 px-4 py-3 rounded-xl bg-[var(--rb-surface)] text-[var(--rb-text)] font-bold text-lg border-2 border-[var(--rb-accent)]/40 transition hover:bg-[var(--rb-base)] active:scale-95"
           >
             ← Back

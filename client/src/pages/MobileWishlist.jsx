@@ -10,7 +10,7 @@ export default function MobileLocations() {
   const navigate = useNavigate();
 
   return (
-    <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+    <MobileLayout showBack onBack={() => navigate("/m")}>
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="space-y-4 text-center">
           <h1 className="text-3xl font-bold text-[var(--rb-text)]">Manage Locations</h1>
@@ -37,7 +37,7 @@ export default function MobileLocations() {
         </div>
 
         <button
-          onClick={() => navigate("/roboard/mobile/scan")}
+          onClick={() => navigate("/m")}
           className="w-full h-16 px-4 py-3 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
         >
           ← Back to Scan

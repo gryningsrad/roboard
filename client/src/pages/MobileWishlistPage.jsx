@@ -53,7 +53,7 @@ export default function MobileWishlistPage({ pushToast }) {
 
   if (loading) {
     return (
-      <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+      <MobileLayout showBack onBack={() => navigate("/m")}>
         <div className="text-center py-12">
           <p className="text-[var(--rb-muted)]">Loading wishlist...</p>
         </div>
@@ -63,14 +63,14 @@ export default function MobileWishlistPage({ pushToast }) {
 
   if (error) {
     return (
-      <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+      <MobileLayout showBack onBack={() => navigate("/m")}>
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="bg-red-900/30 border border-red-500/50 rounded-xl p-6 text-red-200">
             <p className="font-semibold text-lg">❌ Error</p>
             <p>{error}</p>
           </div>
           <button
-            onClick={() => navigate("/roboard/mobile/scan")}
+            onClick={() => navigate("/m")}
             className="w-full h-16 px-4 py-3 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
           >
             Back to Scan
@@ -81,7 +81,7 @@ export default function MobileWishlistPage({ pushToast }) {
   }
 
   return (
-    <MobileLayout showBack onBack={() => navigate("/roboard/mobile/scan")}>
+    <MobileLayout showBack onBack={() => navigate("/m")}>
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-[var(--rb-text)]">Wishlist</h1>
@@ -126,7 +126,7 @@ export default function MobileWishlistPage({ pushToast }) {
         )}
 
         <button
-          onClick={() => navigate("/roboard/mobile/scan")}
+          onClick={() => navigate("/m")}
           className="w-full h-16 px-4 py-3 rounded-xl bg-[var(--rb-accent)] text-[var(--rb-text)] font-bold text-lg transition hover:bg-[var(--rb-accent-hover)] active:scale-95"
         >
           ← Back to Scan
