@@ -29,8 +29,7 @@ from config import SPARES_ENV, get_export_dir
 # Logging and metrics
 from logging_setup import setup_logging
 from middleware import RequestContextLoggingMiddleware
-from metrics import init_metrics_table, record_request, flush
-import structlog
+from metrics import init_metrics_table, flush
 
 app = FastAPI(
     title="ROBoard Spares Kiosk API",

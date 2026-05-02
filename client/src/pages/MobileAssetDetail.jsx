@@ -146,55 +146,57 @@ export default function MobileAssetDetail({ pushToast }) {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Asset Header */}
         <div className="space-y-4 bg-[var(--rb-surface)]/50 border border-[var(--rb-border)] rounded-xl p-6">
-          <h1 className="text-3xl font-bold text-[var(--rb-text)]">{asset.name}</h1>
+          <h1 className="text-xl font-bold text-[var(--rb-text)]">{asset.name}</h1>
 
           {/* Key Fields */}
           <div className="grid grid-cols-1 gap-4 text-lg">
             {asset.number && (
               <div className="flex justify-between items-start">
-                <span className="text-[var(--rb-muted)]">Part Number:</span>
+                <span className="text-[var(--rb-muted)] text-sm">Part Number:</span>
                 <span className="text-xs font-mono text-green-400 bg-green-950/40 border border-green-700/50 px-2 py-1 rounded-lg">
                   {asset.number}
                 </span>
               </div>
             )}
 
+            <div className="flex justify-between items-start">
+              <span className="text-[var(--rb-muted)] text-sm">Location:</span>
+              <span className="text-xs font-semibold px-2 py-1 rounded-md border border-yellow-700/60 bg-yellow-900/60 text-yellow-200">
+                {currentLocation}
+              </span>
+            </div>
+
             {asset.makers_ref && (
               <div className="flex justify-between items-start">
-                <span className="text-[var(--rb-muted)]">Maker Ref:</span>
+                <span className="text-[var(--rb-muted)] text-sm">Maker Ref:</span>
                 <span className="text-[var(--rb-text)] font-semibold">{asset.makers_ref}</span>
               </div>
             )}
 
             {asset.ean && (
               <div className="flex justify-between items-start">
-                <span className="text-[var(--rb-muted)]">Barcode (EAN):</span>
-                <span className="text-[var(--rb-text)] font-mono">{asset.ean}</span>
+                <span className="text-[var(--rb-muted)] text-sm">Barcode (EAN):</span>
+                <span className="text-xs font-semibold px-2 py-1 rounded-md border text-cyan-400 bg-cyan-950/40 border-cyan-700/50">{asset.ean}</span>
               </div>
             )}
 
             {(asset.rob !== null && asset.rob !== undefined) || asset.unit ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex justify-between items-start">
-                  <span className="text-[var(--rb-muted)]">ROB:</span>
-                  <span className="text-[var(--rb-accent)] font-bold text-2xl">{currentRob}</span>
-                </div>
+            <div className=" gap-4 items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setRobValue(currentRob ?? "");
+                  setShowRobInput(true);
+                }}
+                className="h-12 px-4 rounded-xl bg-[var(--rb-accent)]/15 border border-[var(--rb-accent)] text-[var(--rb-accent)] font-bold text-lg transition active:scale-95"
+              >
+                ROB: {currentRob}
+              </button>
 
-                {asset.unit && (
-                  <div className="flex justify-between items-start">
-                    <span className="text-[var(--rb-muted)]">Unit:</span>
-                    <span className="text-[var(--rb-text)]">{asset.unit}</span>
-                  </div>
-                )}
-              </div>
-            ) : null}
-
-            <div className="flex justify-between items-start">
-              <span className="text-[var(--rb-muted)]">Location:</span>
-              <span className="text-xs font-semibold px-2 py-1 rounded-md border border-yellow-700/60 bg-yellow-900/60 text-yellow-200">
-                {currentLocation}
-              </span>
             </div>
+          ) : null}
+
+            
 
             {asset.rob_updated_at && (
               <div className="flex justify-between items-start text-sm">
@@ -218,7 +220,7 @@ export default function MobileAssetDetail({ pushToast }) {
               value={robValue}
               onChange={(e) => setRobValue(e.target.value)}
               placeholder={`Current: ${currentRob}`}
-              className="w-full h-16 px-6 rounded-lg bg-[var(--rb-bg)] border border-[var(--rb-border)] text-xl text-[var(--rb-text)] placeholder-[var(--rb-muted)] outline-none focus:border-[var(--rb-accent)] focus:ring-2 focus:ring-[var(--rb-accent)]/20"
+              className="w-full h-16 px-6 rounded-lg bg-[var(--rb-bg)] border border-[var(--rb-border)] text-lg text-[var(--rb-text)] placeholder-[var(--rb-muted)] outline-none focus:border-[var(--rb-accent)] focus:ring-2 focus:ring-[var(--rb-accent)]/20"
               autoFocus
             />
             <div className="grid grid-cols-2 gap-3">

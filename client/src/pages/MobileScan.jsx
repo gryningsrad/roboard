@@ -140,7 +140,7 @@ export default function MobileScan({ pushToast }) {
             autoComplete="off"
             autoCorrect="off"
             spellCheck="false"
-            className="w-full h-20 px-6 rounded-xl bg-[var(--rb-surface)] border-2 border-[var(--rb-accent)]/50 text-2xl text-[var(--rb-text)] placeholder-[var(--rb-muted)] outline-none transition focus:border-[var(--rb-accent)] focus:ring-2 focus:ring-[var(--rb-accent)]/20"
+            className="w-full h-20 px-6 rounded-xl bg-[var(--rb-surface)] border-2 border-[var(--rb-accent)]/50 text-xl text-[var(--rb-text)] placeholder-[var(--rb-muted)] outline-none transition focus:border-[var(--rb-accent)] focus:ring-2 focus:ring-[var(--rb-accent)]/20"
           />
 
           {error && (

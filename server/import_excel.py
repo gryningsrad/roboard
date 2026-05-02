@@ -1,6 +1,11 @@
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any
+import re
+from typing import Optional
+
+import structlog
+
 import os
 
 from openpyxl import load_workbook
@@ -14,6 +19,8 @@ LOCAL_EXPORTS = Path(
 )
 
 LOCAL_EXPORTS.mkdir(parents=True, exist_ok=True)
+
+logger = structlog.get_logger(__name__)
 
 def _to_float(v: Any, default: float | None = None) -> float | None:
     v = _clean(v)
@@ -100,9 +107,55 @@ def _first_sheet(wb):
     ws = wb.worksheets[0]
     return ws, ws.title
 
+def normalize_location(raw_value: Optional[str]) -> str:
+    """
+    Normalize AMOS location format.
+
+    Expected input:
+        "CODE - CODE"
+
+    Output:
+        "CODE"
+
+    Rules:
+    - Handles inconsistent spacing: "CODE-CODE", "CODE  -  CODE"
+    - Returns first part if two values differ
+    - Returns value unchanged if no separator exists
+    - Safe for None / empty input
+    """
+
+    if raw_value is None:
+        return ""
+
+    value = str(raw_value).strip()
+
+    if not value:
+        return ""
+
+    # Split on "-" with flexible spacing
+    parts = [p.strip() for p in re.split(r"\s*-\s*", value) if p.strip()]
+
+    if not parts:
+        return ""
+
+    if len(parts) == 1:
+        return parts[0]
+
+    # If duplicated → clean it properly
+    if len(parts) == 2 and parts[0] == parts[1]:
+        return parts[0]
+
+    # If mismatch → return first, but this is worth logging upstream
+    return parts[0]
+
 
 def import_parts_replace_all(xlsx: Path) -> dict:
     """Imports Parts from first sheet. Before deleting parts, exports current wishlist to USB."""
+
+    logger.info(
+        "Import parts: Starting import process"
+    )
+
     usb = find_usb_mount()
     export_dir = (usb / "spares_exports") if usb else (LOCAL_EXPORTS / "spares_exports")
     wishlist_file = export_wishlist_xlsx(export_dir)
@@ -115,6 +168,14 @@ def import_parts_replace_all(xlsx: Path) -> dict:
     if "Number" not in idx:
         raise ValueError("Column 'Number' is required in Parts file (first sheet)")
 
+    # Logger info about detected columns and their count
+    logger.info(
+        "import.parts.columns_detected",
+        sheet_name=sheet_name,
+        column_count=len(headers),
+        columns=headers
+    )
+    
     now = datetime.now().isoformat(timespec="seconds")
 
     conn = get_conn()
@@ -157,7 +218,7 @@ def import_parts_replace_all(xlsx: Path) -> dict:
                     g("Unit"),
                     g("Pref. Vendor Code"),
                     g("Order status"),
-                    g("Default Location"),
+                    normalize_location(g("Default Location")),
                     g("Stock Class"),
                     g("Stock Class Description"),
                     _to_int(g("Reserved") or 0),
@@ -168,13 +229,16 @@ def import_parts_replace_all(xlsx: Path) -> dict:
                     g("Weight Unit"),
                     weight,
                     g("Alternative Available"),
-                    (str(g("EAN")).strip() if g("EAN") not in (None, "") else None),  # migration_003
+                    (str(g("EAN code:")).strip() if g("EAN code:") not in (None, "") else None),  # migration_003
+                    #g("EAN code:"),
                     now,
                 )
             )
 
             # rowcount is 1 if inserted, 0 if ignored
             inserted += (cur.rowcount or 0)
+
+            # logger.info(f"Processed part '{num}': attempted={attempted}, inserted={inserted}, ignored_duplicates={attempted - inserted}, ean={g('EAN Code:')}, weight={weight}")
 
         conn.commit()
     finally:
@@ -189,8 +253,6 @@ def import_parts_replace_all(xlsx: Path) -> dict:
         "usb_detected": bool(usb),
         "exported_wishlist_file": str(wishlist_file),
     }
-
-
 
 def import_orders_replace_all(xlsx: Path) -> dict:
     """Imports Orders from first sheet. Replaces all orders."""

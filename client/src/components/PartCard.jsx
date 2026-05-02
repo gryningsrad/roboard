@@ -241,6 +241,14 @@ export default function PartCard({
               <Info label="Vendor" value={part.pref_vendor_code} />
             </div>
 
+            {part.ean ? (
+              <div className="mt-2">
+                <span className="text-xs font-semibold px-2 py-1 rounded-md border text-cyan-400 bg-cyan-950/40 border-cyan-700/50">
+                  EAN: {part.ean}
+                </span>
+              </div>
+            ) : null}
+
             {part.rob_updated_at ? (
               <div className="mt-2 text-xs text-[var(--rb-dim)]">
                 ROB updated: {part.rob_updated_at}
@@ -329,7 +337,7 @@ export default function PartCard({
               value={locVal}
               onChange={(e) => setLocVal(e.target.value)}
               placeholder={displayLoc ? `Current: ${displayLoc}` : "Enter new location"}
-              className="mt-4 w-full bg-[var(--rb-surface)]/25 border border-[var(--rb-border)] rounded-2xl px-4 py-3 text-sm text-black placeholder:text-black/40 outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
+              className="mt-4 w-full bg-[var(--rb-surface)]/25 border border-[var(--rb-border)] rounded-2xl px-4 py-3 text-xs text-black placeholder:text-black/40 outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -347,7 +355,7 @@ export default function PartCard({
               value={locNote}
               onChange={(e) => setLocNote(e.target.value)}
               placeholder="Optional note (e.g. moved during inventory)"
-              className="mt-3 w-full min-h-[84px] bg-[var(--rb-surface)]/25 border border-[var(--rb-border)] rounded-2xl px-4 py-3 text-sm text-black placeholder:text-black/40 outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
+              className="mt-3 w-full min-h-[84px] bg-[var(--rb-surface)]/25 border border-[var(--rb-border)] rounded-2xl px-4 py-3 text-xs text-black placeholder:text-black/40 outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
               disabled={savingLoc}
             />
 
@@ -406,7 +414,7 @@ export default function PartCard({
                   ? `Current: ${part.rob}`
                   : "No ROB set"
               }
-              className="mt-4 w-full bg-[var(--rb-surface)]/25 border border-[var(--rb-border)] rounded-2xl px-4 py-3 text-sm text-black placeholder:text-black/40 outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
+              className="mt-4 w-full bg-[var(--rb-surface)]/25 border border-[var(--rb-border)] rounded-2xl px-4 py-3 text-xs text-black placeholder:text-black/40 outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
