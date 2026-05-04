@@ -23,6 +23,7 @@ export default function PartCard({
   onToggleWishlist,
   onRobUpdated,
   onLocationUpdated, // NEW optional callback
+  onEanUpdated, // NEW optional callback
   refreshNavCounts,
   robFlash,
   pushToast,
@@ -39,6 +40,54 @@ export default function PartCard({
   const [savingRob, setSavingRob] = useState(false);
   const [robErr, setRobErr] = useState("");
   const robInputRef = useRef(null);
+
+  // -----------------------
+  // EAN modal state
+  // -----------------------
+  const [eanOpen, setEanOpen] = useState(false);
+  const [eanVal, setEanVal] = useState(part.override_ean || part.ean || "");
+  const [savingEan, setSavingEan] = useState(false);
+  const [eanErr, setEanErr] = useState("");
+  const eanInputRef = useRef(null);
+
+  useEffect(() => {
+    setEanVal(part.override_ean || part.ean || "");
+  }, [part.override_ean, part.ean]);
+
+  useEffect(() => {
+    if (eanOpen) {
+      setEanErr("");
+      setEanVal(part.override_ean || part.ean || "");
+      setTimeout(() => eanInputRef.current?.focus(), 0);
+    }
+  }, [eanOpen]);
+
+  function closeEan() {
+    setEanOpen(false);
+    setEanErr("");
+    setEanVal(part.override_ean || part.ean || "");
+  }
+
+  async function commitEan() {
+    const v = eanVal.trim();
+
+    setSavingEan(true);
+    setEanErr("");
+
+    try {
+      const res = await apiPost(`/api/ean-overrides/${encodeURIComponent(part.number)}`, { ean: v });
+      onEanUpdated?.(part.number, res.ean, res.updated_at);
+      refreshNavCounts?.();
+      setEanOpen(false);
+      pushToast?.("success", `EAN updated to "${v}"`);
+    } catch (e) {
+      const msg = e?.message || "Failed to update EAN";
+      setEanErr(msg);
+      pushToast?.("error", msg);
+    } finally {
+      setSavingEan(false);
+    }
+  }
 
   useEffect(() => {
     setRobVal(part.rob !== null && part.rob !== undefined ? String(part.rob) : "");
@@ -100,6 +149,14 @@ export default function PartCard({
   const hasOverride = !!overrideLoc && overrideLoc !== oldLoc;
 
   const displayLoc = hasOverride ? overrideLoc : oldLoc;
+
+  // -----------------------
+  // EAN override display
+  // -----------------------
+  const oldEan = (part.original_ean || "").trim();
+  const overrideEan = (part.override_ean || part.ean || "").trim();
+  const hasEanOverride = !!overrideEan && overrideEan !== oldEan;
+  const displayEan = overrideEan || oldEan;
 
   const [locOpen, setLocOpen] = useState(false);
   const [locVal, setLocVal] = useState(displayLoc || "");
@@ -225,12 +282,14 @@ export default function PartCard({
             </button>
             </div>
 
-            {/* If overridden, show old location beneath */}
+            {/* If overridden, show old location beneath 
             {hasOverride ? (
               <div className="mt-1 text-xs text-[var(--rb-dim)]">
                 Old location: <span className="text-[var(--rb-muted)]">{oldLoc || "—"}</span>
               </div>
             ) : null}
+            */}
+            
 
             <h3 className="mt-2 text-base font-semibold leading-snug text-[var(--rb-text)]">
               {part.name || <span className="text-white/45 italic">No name</span>}
@@ -241,15 +300,41 @@ export default function PartCard({
               <Info label="Vendor" value={part.pref_vendor_code} />
             </div>
 
-            {part.ean ? (
-              <div className="mt-2">
-                <span className="text-xs font-semibold px-2 py-1 rounded-md border text-cyan-400 bg-cyan-950/40 border-cyan-700/50">
-                  EAN: {part.ean}
+            <div className="mt-2 flex items-center gap-2">
+              {displayEan ? (
+                <span
+                  className={[
+                    "text-xs font-semibold px-2 py-1 rounded-md border",
+                    hasEanOverride
+                      ? "text-yellow-200 bg-yellow-900/60 border-yellow-700/60"
+                      : "text-cyan-400 bg-cyan-950/40 border-cyan-700/50",
+                  ].join(" ")}
+                  title={hasEanOverride ? `Override: ${overrideEan}` : `Default: ${oldEan || 'none'}`}
+                >
+                  EAN: {displayEan}
                 </span>
-              </div>
-            ) : null}
+              ) : (
+                <span className="text-xs font-semibold px-2 py-1 rounded-md border text-blue-400 bg-blue-950/40 border-blue-700/50">
+                  Register EAN
+                </span>
+              )}
 
-            {part.rob_updated_at ? (
+              <button
+                type="button"
+                onClick={() => setEanOpen(true)}
+                className={[
+                  "inline-flex items-center justify-center w-7 h-7 rounded-md border transition",
+                  hasEanOverride
+                    ? "border-emerald-700/50 text-emerald-300 bg-emerald-950/30"
+                    : "border-[var(--rb-border)] bg-[var(--rb-bg)]/40 text-[var(--rb-muted)] hover:text-[var(--rb-text)] hover:bg-[var(--rb-surface)]/35"
+                ].join(" ")}
+                title={displayEan ? "Change EAN" : "Register EAN"}
+              >
+                <PencilIcon className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/*part.rob_updated_at ? (
               <div className="mt-2 text-xs text-[var(--rb-dim)]">
                 ROB updated: {part.rob_updated_at}
               </div>
@@ -259,13 +344,13 @@ export default function PartCard({
               <div className="mt-1 text-xs text-[var(--rb-dim)]">
                 Location updated: {part.location_updated_at}
               </div>
-            ) : null}
+            ) : null*/}
 
-            {part.location_note ? (
+            {/*part.location_note ? (
               <div className="mt-1 text-xs text-[var(--rb-dim)]">
                 Note: <span className="text-[var(--rb-muted)]">{part.location_note}</span>
               </div>
-            ) : null}
+            ) : null*/}
           </div>
 
           {/* RIGHT: actions */}
@@ -446,6 +531,77 @@ export default function PartCard({
                 className="px-4 py-2 rounded-xl border border-[var(--rb-accent)]/35 bg-[var(--rb-base)] text-sm font-semibold text-[var(--rb-text)] hover:bg-[var(--rb-base)]/85 transition"
               >
                 {savingRob ? "Saving…" : "Save / Close"}
+              </button>
+            </div>
+
+            <div className="mt-3 text-xs text-[var(--rb-dim)]">
+              Tip: Press <span className="text-[var(--rb-text)]">Enter</span> to save,{" "}
+              <span className="text-[var(--rb-text)]">Esc</span> to cancel.
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* EAN modal */}
+      {eanOpen ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !savingEan) closeEan();
+          }}
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--rb-border)] bg-[var(--rb-bg)] p-5">
+            <h2 className="text-base font-semibold text-[var(--rb-text)]">
+              Change EAN
+            </h2>
+            <p className="mt-1 text-sm text-[var(--rb-muted)]">
+              Part: <span className="font-mono text-[var(--rb-text)]">{part.number}</span>
+            </p>
+
+            <div className="mt-3 text-xs text-[var(--rb-dim)]">
+              Current:{" "}
+              <span className="text-[var(--rb-text)] font-medium">
+                {part.ean || "—"}
+              </span>
+            </div>
+
+            <input
+              ref={eanInputRef}
+              value={eanVal}
+              onChange={(e) => setEanVal(e.target.value)}
+              placeholder={part.ean ? `Current: ${part.ean}` : "Enter new EAN"}
+              className="mt-4 w-full bg-[var(--rb-surface)]/25 border border-[var(--rb-border)] rounded-2xl px-4 py-3 text-xs text-black placeholder:text-black/40 outline-none focus:ring-2 focus:ring-[var(--rb-accent)]/35"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (!savingEan) commitEan();
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  if (!savingEan) closeEan();
+                }
+              }}
+              disabled={savingEan}
+            />
+
+            {eanErr ? (
+              <div className="mt-2 text-sm text-red-300">{eanErr}</div>
+            ) : null}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={closeEan}
+                disabled={savingEan}
+                className="px-4 py-2 rounded-xl border border-[var(--rb-border)] bg-[var(--rb-bg)] text-sm text-[var(--rb-muted)] hover:bg-[var(--rb-surface)]/30 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={commitEan}
+                disabled={savingEan}
+                className="px-4 py-2 rounded-xl border border-[var(--rb-accent)]/35 bg-[var(--rb-base)] text-sm font-semibold text-[var(--rb-text)] hover:bg-[var(--rb-base)]/85 transition"
+              >
+                {savingEan ? "Saving…" : "Save / Close"}
               </button>
             </div>
 

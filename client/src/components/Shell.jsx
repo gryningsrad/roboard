@@ -5,6 +5,7 @@ const navItems = [
   { to: "/rob", label: "ROB", countKey: "rob" },
   { to: "/wishlist", label: "Wishlist", countKey: "wishlist" },
   { to: "/locations", label: "Locations", countKey: "locations" },
+  { to: "/ean", label: "EAN", countKey: "ean" },
   { to: "/import", label: "Import" },
 ];
 

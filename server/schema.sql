@@ -72,8 +72,33 @@ CREATE TABLE location_overrides (
   FOREIGN KEY(part_number) REFERENCES parts(number) ON DELETE CASCADE
 );
 
+-- -------------------------------------
+-- NEW: EAN TABLE
+-- -------------------------------------
+CREATE TABLE part_ean_overrides (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  part_number TEXT NOT NULL,
+  ean TEXT NOT NULL,
+  source TEXT,
+  note TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+
+  FOREIGN KEY(part_number)
+    REFERENCES parts(number)
+    ON DELETE CASCADE,
+
+  UNIQUE(ean)
+);
+
 CREATE INDEX idx_location_overrides_updated_at
 ON location_overrides(updated_at);
 
 CREATE INDEX idx_location_overrides_new_location
 ON location_overrides(new_location);
+
+CREATE INDEX idx_part_ean_overrides_part_number
+ON part_ean_overrides(part_number);
+
+CREATE INDEX idx_part_ean_overrides_ean
+ON part_ean_overrides(ean);

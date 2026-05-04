@@ -9,6 +9,7 @@ import Wishlist from "./pages/Wishlist.jsx";
 {/*import Orders from "./pages/Orders.jsx"; */}
 import ImportPage from "./pages/Import.jsx";
 import Locations from "./pages/LocationsPage.jsx";
+import EanPage from "./pages/EanPage.jsx";
 import Rob from "./pages/Rob.jsx";
 
 // Mobile Routes
@@ -25,6 +26,7 @@ export default function App() {
     rob: null,
     wishlist: null,
     locations: null,
+    ean: null,
   });
 
   function pushToast(kind, message) {
@@ -38,6 +40,7 @@ export default function App() {
         rob: Number.isFinite(data?.rob) ? data.rob : 0,
         wishlist: Number.isFinite(data?.wishlist) ? data.wishlist : 0,
         locations: Number.isFinite(data?.locations) ? data.locations : 0,
+        ean: Number.isFinite(data?.ean) ? data.ean : 0,
       });
     } catch (e) {
       console.error("Failed to refresh nav counts", e);
@@ -75,6 +78,10 @@ export default function App() {
                 />
                 {/*<Route path="/orders" element={<Orders />} /> */}
                 {<Route path="/locations" element={<Locations pushToast={pushToast} refreshNavCounts={refreshNavCounts} />} /> }
+                <Route
+                  path="/ean"
+                  element={<EanPage pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}
+                />
                 <Route
                   path="/rob"
                   element={<Rob pushToast={pushToast} refreshNavCounts={refreshNavCounts} />}

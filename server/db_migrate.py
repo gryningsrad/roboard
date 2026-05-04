@@ -221,6 +221,42 @@ def m004_add_location_overrides(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_location_overrides_new_location
         ON location_overrides(new_location);
     """)
+    
+@migration("005_add_part_eans")
+def m005_add_part_eans(conn: sqlite3.Connection) -> None:
+    """
+    Add table for storing one or more EAN codes per spare part.
+
+    One EAN code may only belong to one part.
+    One part may have multiple EAN codes.
+    """
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS part_ean_overrides (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            part_number TEXT NOT NULL,
+            ean TEXT NOT NULL,
+            source TEXT,
+            note TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+
+            FOREIGN KEY(part_number)
+                REFERENCES parts(number)
+                ON DELETE CASCADE,
+
+            UNIQUE(ean)
+        );
+    """)
+
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_part_eans_part_number
+        ON part_eans(part_number);
+    """)
+
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_part_eans_ean
+        ON part_eans(ean);
+    """)
 
 
 if __name__ == "__main__":

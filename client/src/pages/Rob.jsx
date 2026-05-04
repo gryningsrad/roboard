@@ -37,6 +37,16 @@ export default function Rob({ pushToast, refreshNavCounts }) {
     );
   }
 
+  function onEanUpdated(partNumber, newEan, updatedAt) {
+    setRows((prev) =>
+      prev.map((p) =>
+        p.number === partNumber
+          ? { ...p, ean: newEan, ean_updated_at: updatedAt }
+          : p
+      )
+    );
+  }
+
   async function load() {
     setLoading(true);
     setMsg("");
@@ -144,6 +154,7 @@ export default function Rob({ pushToast, refreshNavCounts }) {
                 onToggleWishlist={toggleWishlist}
                 onRobUpdated={onRobUpdated}
                 onLocationUpdated={onLocationUpdated}
+                onEanUpdated={onEanUpdated}
                 refreshNavCounts={refreshNavCounts}
                 robFlash={robFlashKey === p.number}
                 pushToast={pushToast}

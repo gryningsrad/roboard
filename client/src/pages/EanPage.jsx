@@ -22,7 +22,7 @@ function TrashIcon({ className = "" }) {
   );
 }
 
-export default function LocationsPage({ pushToast, refreshNavCounts }) {
+export default function EanPage({ pushToast, refreshNavCounts }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [busyExport, setBusyExport] = useState(false);
@@ -68,7 +68,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
     setRows((prev) =>
       prev.map((p) =>
         p.number === partNumber
-          ? { ...p, ean: newEan, ean_updated_at: updatedAt }
+          ? { ...p, override_ean: newEan, ean_updated_at: updatedAt }
           : p
       )
     );
@@ -78,10 +78,10 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
     setBusy(true);
     setMsg("");
     try {
-      const data = await apiGet("/api/locations?limit=300");
+      const data = await apiGet("/api/ean-overrides?limit=300");
       setRows(Array.isArray(data) ? data : []);
     } catch (e) {
-      const m = e?.message || "Failed to load locations.";
+      const m = e?.message || "Failed to load EAN overrides.";
       setMsg(m);
       pushToast?.("error", m);
     } finally {
@@ -99,7 +99,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
   // user clicked export button, show confirmation if there are rows
   function requestExport() {
     if (rows.length === 0) {
-      setMsg("No location overrides available to export.");
+      setMsg("No EAN overrides available to export.");
       return;
     }
     setConfirmOpen(true);
@@ -111,11 +111,11 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
     setBusyExport(true);
     setMsg("");
     try {
-      const r = await apiPost("/api/locations/export", {});
+      const r = await apiPost("/api/ean-overrides/export", {});
       await refresh(); // clear rows on success
       refreshNavCounts?.();
-      setMsg(`Exported ${r?.rows_exported ?? 0} row(s) and cleared the location override list.`);
-      pushToast?.("success", `Location overrides exported (${r?.rows_exported ?? 0}) and cleared`);
+      setMsg(`Exported ${r?.rows_exported ?? 0} row(s) and cleared the EAN override list.`);
+      pushToast?.("success", `EAN overrides exported (${r?.rows_exported ?? 0}) and cleared`);
     } catch (e) {
       const m = e?.message || "Export failed.";
       setMsg(m);
@@ -151,13 +151,13 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
     setDeleting(true);
     setMsg("");
     try {
-      await apiPost(`/api/locations/delete/${encodeURIComponent(deleteTarget.number)}`);
+      await apiPost(`/api/ean-overrides/delete/${encodeURIComponent(deleteTarget.number)}`);
       setRows((prev) => prev.filter((p) => p.number !== deleteTarget.number));
       refreshNavCounts?.();
-      pushToast?.("success", `Location override removed for ${deleteTarget.number}`);
+      pushToast?.("success", `EAN override removed for ${deleteTarget.number}`);
       setDeleteTarget(null);
     } catch (e) {
-      const m = e?.message || "Failed to delete location override.";
+      const m = e?.message || "Failed to delete EAN override.";
       setMsg(m);
       pushToast?.("error", m);
     } finally {
@@ -171,7 +171,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-[var(--rb-text)]">
-            Location Overrides
+            EAN Overrides
           </h1>
           <p className="text-sm text-[var(--rb-muted)]">
             {count} active override{count !== 1 ? "s" : ""}
@@ -198,7 +198,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
             <div className="text-sm text-[var(--rb-muted)]">Loading…</div>
           ) : rows.length === 0 ? (
             <div className="text-sm text-[var(--rb-muted)] border border-[var(--rb-border)] rounded-2xl p-4 bg-[var(--rb-surface)]/20">
-              No location overrides have been set.
+              No EAN overrides have been set.
             </div>
           ) : (
             rows.map((p) => (
@@ -221,7 +221,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
                     type="button"
                     onClick={() => requestDelete(p)}
                     className="h-full w-full inline-flex flex-col items-center justify-center gap-2 px-2 py-2 rounded-2xl border border-red-500/35 bg-red-950/20 text-sm font-semibold text-red-200 hover:bg-red-950/35 transition"
-                    title="Delete location override"
+                    title="Delete EAN override"
                   >
                     <TrashIcon className="w-5 h-5" />
                     <span className="text-center leading-tight">
@@ -240,7 +240,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
         <aside className="lg:col-span-1 border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-surface)]/20 p-4 sticky top-24">
           <h2 className="text-sm font-semibold text-[var(--rb-text)]">Actions</h2>
           <p className="mt-1 text-xs text-[var(--rb-muted)]">
-            Export the current location override list to an Excel file and clear the
+            Export the current EAN override list to an Excel file and clear the
             list.
           </p>
 
@@ -272,7 +272,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
         >
           <div className="w-full max-w-lg border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-bg)] p-5 shadow-xl">
             <h3 className="text-lg font-extrabold tracking-tight text-[var(--rb-text)]">
-              Export location overrides?
+              Export EAN overrides?
             </h3>
             <p className="mt-2 text-sm text-[var(--rb-muted)]">
               This will export{" "}
@@ -303,6 +303,7 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
         </div>
       ) : null}
 
+      {/* Delete confirmation modal */}
       {deleteTarget ? (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
@@ -311,39 +312,29 @@ export default function LocationsPage({ pushToast, refreshNavCounts }) {
         >
           <div className="w-full max-w-lg border border-[var(--rb-border)] rounded-2xl bg-[var(--rb-bg)] p-5 shadow-xl">
             <h3 className="text-lg font-extrabold tracking-tight text-[var(--rb-text)]">
-              Delete location override?
+              Delete EAN override?
             </h3>
             <p className="mt-2 text-sm text-[var(--rb-muted)]">
-              This will remove the override for{" "}
-              <span className="font-mono text-[var(--rb-text)]">{deleteTarget.number}</span>.
-            </p>
-            <p className="mt-2 text-sm text-[var(--rb-muted)]">
-              The part will go back to its original location:
-              {" "}
-              <span className="font-semibold text-[var(--rb-text)]">
-                {deleteTarget.default_location || "—"}
-              </span>
+              This will remove the EAN override for part{" "}
+              <span className="font-mono text-[var(--rb-text)]">{deleteTarget.number}</span>{" "}
+              ({deleteTarget.name}).
             </p>
 
             <div className="mt-5 flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleting}
-                className="px-4 py-2 rounded-xl bg-[var(--rb-surface)]/20 hover:bg-[var(--rb-surface)]/35 border border-[var(--rb-border)] text-sm font-semibold text-[var(--rb-muted)] transition disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-[var(--rb-surface)]/20 hover:bg-[var(--rb-surface)]/35 border border-[var(--rb-border)] text-sm font-semibold text-[var(--rb-muted)] transition"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
                 disabled={deleting}
-                className="px-4 py-2 rounded-xl bg-red-950/35 hover:bg-red-950/50 border border-red-500/45 text-red-100 text-sm font-extrabold transition disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-red-900/30 hover:bg-red-900/50 border border-red-500/50 text-red-200 text-sm font-extrabold transition"
               >
-                {deleting ? "Deleting…" : "Delete override"}
+                {deleting ? "Deleting…" : "Delete"}
               </button>
-            </div>
-
-            <div className="mt-3 text-xs text-[var(--rb-dim)]">
-              This removes only the local override, not the part itself.
             </div>
           </div>
         </div>

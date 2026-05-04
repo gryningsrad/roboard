@@ -31,6 +31,9 @@ from logging_setup import setup_logging
 from middleware import RequestContextLoggingMiddleware
 from metrics import init_metrics_table, flush
 
+# Routes
+from ean_overrides import router as ean_override_router
+
 app = FastAPI(
     title="ROBoard Spares Kiosk API",
     version="1.0.0"
@@ -39,6 +42,8 @@ app = FastAPI(
 # Logging middleware is added before any routes to ensure all requests are logged, including unmatched routes.
 logger = setup_logging()
 app.add_middleware(RequestContextLoggingMiddleware)
+
+app.include_router(ean_override_router)
 
 BASE = Path(__file__).resolve().parent
 class RobIn(BaseModel):
@@ -67,7 +72,7 @@ def startup():
     """
     if not (BASE / "app.db").exists():
         init_db()
-    
+
     # Logging and metrics setup
     init_metrics_table()
     logger.info("startup_complete", env=SPARES_ENV, db=str(BASE / "app.db"))
@@ -180,15 +185,39 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
         if not tokens:
             rows = conn.execute(
                 """
-                SELECT p.*,
+                SELECT
+                    p.number,
+                    p.name,
+                    p.qa_grading,
+                    p.maker_code,
+                    p.makers_reference,
+                    p.unit,
+                    p.pref_vendor_code,
+                    p.order_status,
+                    p.default_location,
+                    p.stock_class,
+                    p.stock_class_description,
+                    p.reserved,
+                    p.price_class,
+                    p.asset,
+                    p.hm,
+                    p.attachments,
+                    p.weight_unit,
+                    p.weight,
+                    p.alternative_available,
+                    p.imported_at,
+                    p.ean AS amos_ean,
                     EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
                     r.rob AS rob,
                     r.updated_at AS rob_updated_at,
                     lo.new_location AS overridden_location,
-                    lo.updated_at AS location_updated_at
+                    lo.updated_at AS location_updated_at,
+                    COALESCE(peo.ean, p.ean) AS ean,
+                    peo.updated_at AS ean_updated_at
                 FROM parts p
                 LEFT JOIN rob r ON r.part_number = p.number
                 LEFT JOIN location_overrides lo ON lo.part_number = p.number
+                LEFT JOIN part_ean_overrides peo ON peo.part_number = p.number
                 ORDER BY COALESCE(lo.new_location, p.default_location), p.number
                 LIMIT ?
                 """,
@@ -230,7 +259,7 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
         elif field == "ean":
             where_parts = []
             for t in tokens:
-                where_parts.append("p.ean LIKE ?")
+                where_parts.append("COALESCE(peo.ean, p.ean) LIKE ?")
                 params.append(like_for(t))
             where = " AND ".join(where_parts)
 
@@ -249,7 +278,7 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
                         "p.makers_reference LIKE ? OR "
                         "p.default_location LIKE ? OR "
                         "lo.new_location LIKE ? OR "
-                        "p.ean LIKE ?"
+                        "COALESCE(peo.ean, p.ean) LIKE ?"
                         ")"
                     )
                     params.extend([like, like, like, like, like, like, like])
@@ -261,7 +290,7 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
                         "p.makers_reference LIKE ? OR "
                         "p.default_location LIKE ? OR "
                         "lo.new_location LIKE ? OR "
-                        "p.ean LIKE ?"
+                        "COALESCE(peo.ean, p.ean) LIKE ?"
                         ")"
                     )
                     params.extend([like, like, like, like, like, like])
@@ -270,15 +299,39 @@ def search_parts(q: str = "", field: str = "all", limit: int = 50):
 
         rows = conn.execute(
             f"""
-            SELECT p.*,
+            SELECT
+                p.number,
+                p.name,
+                p.qa_grading,
+                p.maker_code,
+                p.makers_reference,
+                p.unit,
+                p.pref_vendor_code,
+                p.order_status,
+                p.default_location,
+                p.stock_class,
+                p.stock_class_description,
+                p.reserved,
+                p.price_class,
+                p.asset,
+                p.hm,
+                p.attachments,
+                p.weight_unit,
+                p.weight,
+                p.alternative_available,
+                p.imported_at,
+                p.ean AS amos_ean,
                 EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
                 r.rob AS rob,
                 r.updated_at AS rob_updated_at,
                 lo.new_location AS overridden_location,
-                lo.updated_at AS location_updated_at
+                lo.updated_at AS location_updated_at,
+                COALESCE(peo.ean, p.ean) AS ean,
+                peo.updated_at AS ean_updated_at
             FROM parts p
             LEFT JOIN rob r ON r.part_number = p.number
             LEFT JOIN location_overrides lo ON lo.part_number = p.number
+            LEFT JOIN part_ean_overrides peo ON peo.part_number = p.number
             WHERE {where}
             ORDER BY COALESCE(lo.new_location, p.default_location), p.number
             LIMIT ?
@@ -329,12 +382,38 @@ def simple_search_parts(q: str = "", field: str = "all", limit: int = 50):
         if not q:
             rows = conn.execute(
                 """
-                SELECT p.*,
+                SELECT
+                    p.number,
+                    p.name,
+                    p.qa_grading,
+                    p.maker_code,
+                    p.makers_reference,
+                    p.unit,
+                    p.pref_vendor_code,
+                    p.order_status,
+                    p.default_location,
+                    p.stock_class,
+                    p.stock_class_description,
+                    p.reserved,
+                    p.price_class,
+                    p.asset,
+                    p.hm,
+                    p.attachments,
+                    p.weight_unit,
+                    p.weight,
+                    p.alternative_available,
+                    p.imported_at,
+                    p.ean AS amos_ean,
                     EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
                     r.rob AS rob,
-                    r.updated_at AS rob_updated_at
+                    r.updated_at AS rob_updated_at,
+                    p.ean AS original_ean,
+                    peo.ean AS override_ean,
+                    COALESCE(peo.ean, p.ean) AS ean,
+                    peo.updated_at AS ean_updated_at
                 FROM parts p
                 LEFT JOIN rob r ON r.part_number = p.number
+                LEFT JOIN part_ean_overrides peo ON peo.part_number = p.number
                 ORDER BY p.default_location, p.number
                 LIMIT ?
                 """,
@@ -353,7 +432,7 @@ def simple_search_parts(q: str = "", field: str = "all", limit: int = 50):
                 where = "p.default_location LIKE ?"
                 params = (like,)
             elif field == "ean":
-                where = "p.ean LIKE ?"
+                where = "COALESCE(peo.ean, p.ean) LIKE ?"
                 params = (like,)
             else:
                 where = """
@@ -361,18 +440,44 @@ def simple_search_parts(q: str = "", field: str = "all", limit: int = 50):
                     OR p.name LIKE ?
                     OR p.makers_reference LIKE ?
                     OR p.default_location LIKE ?
-                    OR p.ean LIKE ?
+                    OR COALESCE(peo.ean, p.ean) LIKE ?
                 """
                 params = (like, like, like, like, like)
 
             rows = conn.execute(
                 f"""
-                SELECT p.*,
-                    EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
-                    r.rob AS rob,
-                    r.updated_at AS rob_updated_at
+            SELECT
+                p.number,
+                p.name,
+                p.qa_grading,
+                p.maker_code,
+                p.makers_reference,
+                p.unit,
+                p.pref_vendor_code,
+                p.order_status,
+                p.default_location,
+                p.stock_class,
+                p.stock_class_description,
+                p.reserved,
+                p.price_class,
+                p.asset,
+                p.hm,
+                p.attachments,
+                p.weight_unit,
+                p.weight,
+                p.alternative_available,
+                p.imported_at,
+                p.ean AS amos_ean,
+                EXISTS(SELECT 1 FROM wishlist w WHERE w.part_number = p.number) AS wishlisted,
+                r.rob AS rob,
+                r.updated_at AS rob_updated_at,
+                p.ean AS original_ean,
+                peo.ean AS override_ean,
+                COALESCE(peo.ean, p.ean) AS ean,
+                peo.updated_at AS ean_updated_at
                 FROM parts p
                 LEFT JOIN rob r ON r.part_number = p.number
+                LEFT JOIN part_ean_overrides peo ON peo.part_number = p.number
                 WHERE {where}
                 ORDER BY p.default_location, p.number
                 LIMIT ?
@@ -391,17 +496,19 @@ def get_nav_counts():
 
     Returns:
         dict:
-            Counts for ROB, wishlist, and location overrides.
+            Counts for ROB, wishlist, location overrides, and EAN overrides.
     """
     conn = get_conn()
     try:
         wishlist = conn.execute("SELECT COUNT(*) AS c FROM wishlist").fetchone()["c"]
         rob = conn.execute("SELECT COUNT(*) AS c FROM rob").fetchone()["c"]
         locations = conn.execute("SELECT COUNT(*) AS c FROM location_overrides").fetchone()["c"]
+        ean = conn.execute("SELECT COUNT(*) AS c FROM part_ean_overrides").fetchone()["c"]
         return {
             "wishlist": int(wishlist or 0),
             "rob": int(rob or 0),
             "locations": int(locations or 0),
+            "ean": int(ean or 0),
         }
     finally:
         conn.close()
@@ -424,11 +531,15 @@ def get_wishlist():
                 r.rob AS rob,
                 r.updated_at AS rob_updated_at,
                 lo.new_location AS overridden_location,
-                lo.updated_at AS location_updated_at
+                lo.updated_at AS location_updated_at,
+                p.ean AS original_ean,
+                peo.ean AS override_ean,
+                COALESCE(peo.ean, p.ean) AS ean
             FROM wishlist w
             JOIN parts p ON p.number = w.part_number
             LEFT JOIN rob r ON r.part_number = p.number
             LEFT JOIN location_overrides lo ON lo.part_number = p.number
+            LEFT JOIN part_ean_overrides peo ON peo.part_number = p.number
             ORDER BY COALESCE(lo.new_location, p.default_location), p.number
             """
         ).fetchall()
@@ -547,10 +658,14 @@ def get_rob_list():
                 r.rob AS rob,
                 r.updated_at AS rob_updated_at,
                 lo.new_location AS overridden_location,
-                lo.updated_at AS location_updated_at
+                lo.updated_at AS location_updated_at,
+                p.ean AS original_ean,
+                peo.ean AS override_ean,
+                COALESCE(peo.ean, p.ean) AS ean
             FROM rob r
             JOIN parts p ON p.number = r.part_number
             LEFT JOIN location_overrides lo ON lo.part_number = p.number
+            LEFT JOIN part_ean_overrides peo ON peo.part_number = p.number
             ORDER BY COALESCE(lo.new_location, p.default_location), p.number
             """
         ).fetchall()
@@ -693,10 +808,14 @@ def list_location_overrides(q: str = "", limit: int = 200):
                     r.updated_at AS rob_updated_at,
                     lo.new_location AS overridden_location,
                     lo.note AS location_note,
-                    lo.updated_at AS location_updated_at
+                    lo.updated_at AS location_updated_at,
+                    p.ean AS original_ean,
+                    peo.ean AS override_ean,
+                    COALESCE(peo.ean, p.ean) AS ean
                 FROM location_overrides lo
                 JOIN parts p ON p.number = lo.part_number
                 LEFT JOIN rob r ON r.part_number = p.number
+                LEFT JOIN part_ean_overrides peo ON peo.part_number = p.number
                 WHERE lo.part_number LIKE ? OR p.name LIKE ? OR lo.new_location LIKE ? OR p.default_location LIKE ?
                 ORDER BY lo.updated_at DESC
                 LIMIT ?
@@ -712,10 +831,14 @@ def list_location_overrides(q: str = "", limit: int = 200):
                     r.updated_at AS rob_updated_at,
                     lo.new_location AS overridden_location,
                     lo.note AS location_note,
-                    lo.updated_at AS location_updated_at
+                    lo.updated_at AS location_updated_at,
+                    p.ean AS original_ean,
+                    peo.ean AS override_ean,
+                    COALESCE(peo.ean, p.ean) AS ean
                 FROM location_overrides lo
                 JOIN parts p ON p.number = lo.part_number
                 LEFT JOIN rob r ON r.part_number = p.number
+                LEFT JOIN part_ean_overrides peo ON peo.part_number = p.number
                 ORDER BY lo.updated_at DESC
                 LIMIT ?
                 """,
