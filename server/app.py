@@ -12,6 +12,7 @@ Designed to run on a Raspberry Pi kiosk environment with optional USB export.
 
 from pathlib import Path
 from datetime import datetime, timezone
+import time
 from fastapi import FastAPI, UploadFile, File, HTTPException
 # from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -46,6 +47,8 @@ app.add_middleware(RequestContextLoggingMiddleware)
 app.include_router(ean_override_router)
 
 BASE = Path(__file__).resolve().parent
+START_TIME = time.time()
+
 class RobIn(BaseModel):
     """
     Payload model for setting or adjusting ROB (Remaining On Board).
@@ -81,6 +84,43 @@ def startup():
 def shutdown():
     flush()
     logger.info("shutdown_complete")
+
+@app.get("/v1/system/health")
+def health_check():
+    try:
+        conn = get_conn()
+
+        # Simple DB check
+        conn.execute("SELECT 1").fetchone()
+
+        conn.close()
+
+        return {
+            "status": "ok",
+            "service": "roboard-api",
+            "environment": SPARES_ENV,
+            "database": {
+                "sqlite": True,
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "uptimeSeconds": int(time.time() - START_TIME),
+        }
+
+    except Exception as error:
+        logger.exception("health_check_failed")
+
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "service": "roboard-api",
+                "environment": SPARES_ENV,
+                "database": {
+                    "sqlite": False,
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
 @app.post("/api/import/parts")
 async def import_parts(file: UploadFile = File(...)):
